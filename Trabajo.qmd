@@ -7,91 +7,197 @@ editor: visual
 
 ```{r}
 library(eurostat)
-library(ggplot2)
 library(tidyverse)
+library(ggplot2)
 library(lubridate)
+library(stringr)
+library(ggthemes)
 ```
 
 ```{r}
-GDP <- eurostat::get_eurostat("namq_10_gdp", filters = list(na_item = "B1GQ", s_adj = "SCA", unit = "CP_MEUR"))
-GDP <- GDP %>% mutate(year = year(time), values = values * 1000000) %>% select(geo,time,values,year)
-names(GDP)[3] <- "GDP"
-```
-```{r}
-IPC <- eurostat::get_eurostat("namq_10_gdp", filters = list(na_item = "B1GQ", s_adj = "SCA", unit = "PD05_EUR"))
-IPC <- IPC %>% select(geo,time,values)
-names(IPC)[3] <- "IPC"
+map <- eurostat::get_eurostat_geospatial(nuts_level = 0)
+map <- map %>% select(NAME_LATN,geo,geometry)
 ```
 
 ```{r}
-Population <- eurostat::get_eurostat("tps00001")
-Population <- Population %>% mutate(year = year(TIME_PERIOD))
-names(Population)[5] <- "Population"
-Population <- Population %>% select(-c(freq,indic_de,TIME_PERIOD))
-```
-
-```{r}
-GDP_PC <- inner_join(GDP,Population,by = c("geo","year")) %>% 
-  mutate(GDP_PC = GDP/Population)
-GDP_PC
-```
-```{r}
-GDP_PC <- inner_join(GDP_PC,IPC, by = c("geo","time"))
-GDP_PC <- GDP_PC %>% mutate(GDP_PC_def = GDP_PC * 100/IPC)
-GDP_PC
-```
-
-
-```{r}
-GDP_PC %>%
-  group_by(year, geo) %>% 
-  summarise(GDP_PC = sum(GDP_PC_def)) %>%
-  filter(geo %in% c("ES")) %>% 
-  ggplot(aes(x = year,  y = GDP_PC, color = geo)) +
-  geom_line() +
-  geom_point() +
-  theme_light()
-```
-
-```{r}
-GDP_PC_year <- GDP_PC %>%
-  group_by(year, geo) %>% 
-  summarise(GDP_PC = sum(GDP_PC)) %>% 
-  filter(!is.na(GDP_PC))
-```
-
-```{r}
-GDP_PC %>%
-  select(geo,time,GDP_PC_def) %>%
-  filter(time %in% c("2019-10-01","2023-10-01")) %>%
-  pivot_wider(names_from = time, values_from = GDP_PC_def) %>% 
-  mutate(dif = (`2023-10-01` - `2019-10-01`) / `2019-10-01` * 100) %>%
-  filter(!is.na(dif)) %>%
+map %>% 
   ggplot() +
-  geom_col(aes(x = reorder(geo,desc(dif)), y = dif)) +
-  theme_minimal()
-```
-
-```{r}
-GDP_PC %>%
-  select(geo,time,GDP_PC_def) %>%
-  filter(time %in% c("2019-10-01","2023-10-01")) %>%
-  pivot_wider(names_from = time, values_from = GDP_PC_def) %>% 
-  mutate(dif = (`2023-10-01` - `2019-10-01`) / `2019-10-01` * 100)
+  geom_sf() +
+  coord_sf(xlim = c(-25,45), ylim = c(30,70))
 ```
 
 # Introducción
 
-La Agenda 2030 es un plan de acción global adoptado por todos los Estados miembros de las Naciones Unidas en septiembre de 2015. Su objetivo principal es establecer un conjunto de metas ambiciosas para erradicar la pobreza, proteger el planeta y asegurar la prosperidad para todos. La Agenda 2030 se compone de 17 Objetivos de Desarrollo Sostenible (ODS), que abarcan una amplia gama de áreas, desde la erradicación de la pobreza y el hambre, hasta la promoción de la salud, la educación de calidad, la igualdad de género, el acceso a la energía limpia y la acción climática. Estos objetivos están interrelacionados y buscan abordar los desafíos mundiales de manera integral, teniendo en cuenta tanto las dimensiones sociales, económicas y ambientales del desarrollo sostenible. La implementación de la Agenda 2030 requiere la colaboración y el compromiso de todos los sectores de la sociedad, incluidos gobiernos, empresas, sociedad civil y ciudadanos, para lograr un futuro más justo, próspero y sostenible para las generaciones presentes y futuras.
-
 # Planteamiento problema
 
-De este modo, se estudiará 
-# Objetivos
-
-El objetivo es que mediante indicadores como el PIB, el Índice de libertad económica, etc. Llegar a 
-
 ## Indicadores
+
+### Índice de Gini
+
+```{r}
+gini <- get_eurostat("ilc_di12")
+gini <- gini %>% mutate(year = year(TIME_PERIOD)) %>% select(-c(indic_il,freq)) %>% filter(!str_detect(geo,"EU|EA|NMS"))
+names(gini)[3] <- "gini"
+```
+
+```{r}
+gini_anyo <- left_join(map,filter(gini, year == 2022),by = "geo")
+```
+
+```{r}
+gini_anyo %>%
+  mutate(gini_cut = eurostat::cut_to_classes(gini,n = 5)) %>% 
+  ggplot() +
+  geom_sf(aes(geometry = geometry, fill = gini_cut)) +
+  coord_sf(xlim = c(-25,45), ylim = c(30,70))
+```
+
+```{r}
+anyo <- 2022
+anyo2 <- anyo - 1
+
+gini_eu <- gini %>%
+  filter(year == anyo) %>%
+  group_by(year) %>% 
+  summarise(gini_eu = mean(gini, na.rm = TRUE)) %>%
+  ungroup()
+
+nombres <- gini %>%
+  select(geo, year,gini) %>%
+  filter(year == anyo)
+
+gini_eu <- left_join(nombres,gini_eu, by = "year")
+
+gini_anyo1 <- gini %>% filter(year == anyo)
+gini_anyo2 <- gini %>% filter(year == anyo2 & geo %in% gini_anyo1$geo)
+```
+
+```{r}
+gini_anyo1 %>%
+  
+  ggplot(aes(x = gini, y = reorder(geo, desc(gini)))) +
+  
+  geom_segment(data = gini_eu, aes(x = gini, xend = gini_eu), size = 1.25, color = "#cccccf") +
+  
+  geom_vline(data = gini_eu, aes(xintercept = unique(gini_eu), color = "Media Europea"), size = 1) +
+  
+  geom_point(aes(color = as.character(anyo)), size = 4) +
+  
+  geom_point(data = gini_anyo2, aes(x = gini, color = as.character(anyo2)), size = 3) +
+  
+  labs(x = "Índice Gini", y = "", title = "Índice de Gini", color = "Leyenda") +
+  
+  scale_color_manual(values = c("#797979","#2e9fd9","#bcb7b0")) +
+  
+  theme_minimal()
+```
+
+### Población
+
+```{r}
+pob <- get_eurostat("demo_pjan") %>% filter(!str_detect(geo,"EU|EA|NMS")) %>% select(-c(freq,unit))
+names(pob)[5] <- "pob"
+```
+
+```{r}
+pob_total <- pob %>% filter(age == "TOTAL" & sex == "T") %>% mutate(anyo = year(TIME_PERIOD)) %>% select(-c(age,sex))
+```
+
+```{r}
+pob_sex_edad <- pob %>% filter(!(age %in% c("Y_OPEN","UNK","TOTAL")) & sex != "T") %>% mutate(anyo = year(TIME_PERIOD))
+```
+
+```{r}
+pob_sex_edad$age <- str_remove(pob_sex_edad$age,"Y")
+pob_sex_edad$age[pob_sex_edad$age == "_LT1"] <- "0"
+pob_sex_edad$age <- as.numeric(pob_sex_edad$age)
+```
+
+```{r}
+pob_sex_edad %>% 
+  filter(geo == "ES" & anyo == 2023) %>%
+  mutate(pob = ifelse(sex == "F", pob, -pob) / sum(pob) * 100) %>% 
+  ggplot() +
+  geom_col(aes(x = age, y = pob, fill = sex)) +
+  coord_flip() +
+  theme_minimal()
+```
+
+```{r}
+pob_sex_edad_5 <- pob_sex_edad %>% mutate(age_5 = paste(str_pad(string = age %/% 5 * 5, width = 2,side = "left", pad = "0"),"-",str_pad(age %/% 5 * 5 + 4, width = 2,side = "left", pad = "0")))
+pob_sex_edad_5 <- pob_sex_edad_5 %>%
+  group_by(age_5,sex,geo,anyo) %>% 
+  summarise(pob = sum(pob, na.rm = TRUE))
+```
+
+```{r}
+pob_sex_edad_5 %>%
+  ungroup() %>% 
+  filter(geo == "ES" & anyo == 2023) %>%
+  mutate(pob = ifelse(sex == "F", pob, -pob) / sum(pob) * 100) %>% 
+  ggplot(aes(x = age_5, y = pob)) +
+  geom_col(aes(fill = sex)) +
+  coord_flip() +
+  theme_minimal()
+```
+
+### PIB per Capita
+
+```{r}
+PIB_Q <- get_eurostat("namq_10_gdp", filters = list(na_item = "B1GQ", s_adj = "SCA", unit = "CP_MEUR")) %>% select(geo,time,values)
+names(PIB_Q)[3] <- "PIB"
+PIB_Q <- PIB_Q %>% filter(!str_detect(geo,"EU|EA|NMS") & !is.na(PIB)) %>% mutate(anyo = year(time), PIB = PIB * 1000000)
+```
+
+```{r}
+IPC_2005_Q <- get_eurostat("namq_10_gdp", filters = list(na_item = "B1GQ", s_adj = "SCA", unit = "PD05_EUR")) %>% select(geo,time,values)
+names(IPC_2005_Q)[3] <- "IPC"
+IPC_2005_Q <- IPC_2005_Q %>% filter(!str_detect(geo,"EU|EA|NMS") & !is.na(IPC)) %>% mutate(anyo = year(time))
+```
+
+```{r}
+PPC_Q <- right_join(PIB_Q,pob_total) %>% select(-TIME_PERIOD)
+PPC_Q <- PPC_Q %>% mutate(PPC = PIB / pob)
+```
+
+```{r}
+PPC_Q %>% 
+  filter(geo %in% c("ES","DE","FR","EE")) %>% 
+  ggplot(aes(x = time, y = PPC, color = geo)) +
+  geom_line() +
+  theme_minimal()
+```
+
+```{r}
+PPC_Q <- right_join(PPC_Q,select(IPC_2005_Q,-anyo), by = c("geo","time"))
+PPC_Q <- PPC_Q %>% mutate(PPC_real = PPC * 100 / IPC) %>% select(geo,time,anyo,PPC,PPC_real)
+```
+
+```{r}
+PPC_Q %>% 
+  filter(geo %in% c("ES","DE","FR","CY","PT","EE")) %>% 
+  ggplot(aes(x = time, y = PPC_real, color = geo)) +
+  geom_line() +
+  theme_minimal()
+```
+
+```{r}
+PIB_A <- PIB_Q %>% group_by(geo,anyo) %>% summarise(PIB = sum(PIB, na.rm = TRUE))
+PIB_A
+```
+
+```{r}
+PPC_A <- PPC_Q %>% group_by(geo,anyo) %>% summarise(PPC = sum(PPC, na.rm = TRUE), PPC_real = sum(PPC_real, na.rm = TRUE))
+PPC_A
+```
+
+```{r}
+PPC_A %>%
+  filter(anyo == 2022) %>% 
+  ggplot(aes(x = PPC_real, y = reorder(geo,PPC_real))) + 
+  geom_col()
+```
+
 
 # Descriptivo
 
