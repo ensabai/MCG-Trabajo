@@ -1,0 +1,100 @@
+---
+title: "Trabajo Decente y Crecimiento Económico"
+author: "Sofia Melcarne, Carlos Gila y Enrique Sayas"
+format: html
+editor: visual
+---
+
+```{r}
+library(eurostat)
+library(ggplot2)
+library(tidyverse)
+library(lubridate)
+```
+
+```{r}
+GDP <- eurostat::get_eurostat("namq_10_gdp", filters = list(na_item = "B1GQ", s_adj = "SCA", unit = "CP_MEUR"))
+GDP <- GDP %>% mutate(year = year(time), values = values * 1000000) %>% select(geo,time,values,year)
+names(GDP)[3] <- "GDP"
+```
+```{r}
+IPC <- eurostat::get_eurostat("namq_10_gdp", filters = list(na_item = "B1GQ", s_adj = "SCA", unit = "PD05_EUR"))
+IPC <- IPC %>% select(geo,time,values)
+names(IPC)[3] <- "IPC"
+```
+
+```{r}
+Population <- eurostat::get_eurostat("tps00001")
+Population <- Population %>% mutate(year = year(TIME_PERIOD))
+names(Population)[5] <- "Population"
+Population <- Population %>% select(-c(freq,indic_de,TIME_PERIOD))
+```
+
+```{r}
+GDP_PC <- inner_join(GDP,Population,by = c("geo","year")) %>% 
+  mutate(GDP_PC = GDP/Population)
+GDP_PC
+```
+```{r}
+GDP_PC <- inner_join(GDP_PC,IPC, by = c("geo","time"))
+GDP_PC <- GDP_PC %>% mutate(GDP_PC_def = GDP_PC * 100/IPC)
+GDP_PC
+```
+
+
+```{r}
+GDP_PC %>%
+  group_by(year, geo) %>% 
+  summarise(GDP_PC = sum(GDP_PC_def)) %>%
+  filter(geo %in% c("ES")) %>% 
+  ggplot(aes(x = year,  y = GDP_PC, color = geo)) +
+  geom_line() +
+  geom_point() +
+  theme_light()
+```
+
+```{r}
+GDP_PC_year <- GDP_PC %>%
+  group_by(year, geo) %>% 
+  summarise(GDP_PC = sum(GDP_PC)) %>% 
+  filter(!is.na(GDP_PC))
+```
+
+```{r}
+GDP_PC %>%
+  select(geo,time,GDP_PC_def) %>%
+  filter(time %in% c("2019-10-01","2023-10-01")) %>%
+  pivot_wider(names_from = time, values_from = GDP_PC_def) %>% 
+  mutate(dif = (`2023-10-01` - `2019-10-01`) / `2019-10-01` * 100) %>%
+  filter(!is.na(dif)) %>%
+  ggplot() +
+  geom_col(aes(x = reorder(geo,desc(dif)), y = dif)) +
+  theme_minimal()
+```
+
+```{r}
+GDP_PC %>%
+  select(geo,time,GDP_PC_def) %>%
+  filter(time %in% c("2019-10-01","2023-10-01")) %>%
+  pivot_wider(names_from = time, values_from = GDP_PC_def) %>% 
+  mutate(dif = (`2023-10-01` - `2019-10-01`) / `2019-10-01` * 100)
+```
+
+# Introducción
+
+La Agenda 2030 es un plan de acción global adoptado por todos los Estados miembros de las Naciones Unidas en septiembre de 2015. Su objetivo principal es establecer un conjunto de metas ambiciosas para erradicar la pobreza, proteger el planeta y asegurar la prosperidad para todos. La Agenda 2030 se compone de 17 Objetivos de Desarrollo Sostenible (ODS), que abarcan una amplia gama de áreas, desde la erradicación de la pobreza y el hambre, hasta la promoción de la salud, la educación de calidad, la igualdad de género, el acceso a la energía limpia y la acción climática. Estos objetivos están interrelacionados y buscan abordar los desafíos mundiales de manera integral, teniendo en cuenta tanto las dimensiones sociales, económicas y ambientales del desarrollo sostenible. La implementación de la Agenda 2030 requiere la colaboración y el compromiso de todos los sectores de la sociedad, incluidos gobiernos, empresas, sociedad civil y ciudadanos, para lograr un futuro más justo, próspero y sostenible para las generaciones presentes y futuras.
+
+# Planteamiento problema
+
+De este modo, se estudiará 
+# Objetivos
+
+El objetivo es que mediante indicadores como el PIB, el Índice de libertad económica, etc. Llegar a 
+
+## Indicadores
+
+# Descriptivo
+
+# Resultados
+
+# Conclusiones
