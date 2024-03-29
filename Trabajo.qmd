@@ -23,7 +23,8 @@ map <- map %>% select(NAME_LATN,geo,geometry)
 map %>% 
   ggplot() +
   geom_sf() +
-  coord_sf(xlim = c(-25,45), ylim = c(30,70))
+  coord_sf(xlim = c(-25,45), ylim = c(30,70)) +
+  theme_minimal()
 ```
 
 # Introducción
@@ -49,7 +50,9 @@ gini_anyo %>%
   mutate(gini_cut = eurostat::cut_to_classes(gini,n = 5)) %>% 
   ggplot() +
   geom_sf(aes(geometry = geometry, fill = gini_cut)) +
-  coord_sf(xlim = c(-25,45), ylim = c(30,70))
+  coord_sf(xlim = c(-25,45), ylim = c(30,70)) +
+  scale_fill_viridis_d(option = "magma") +
+  theme_minimal()
 ```
 
 ```{r}
@@ -198,6 +201,16 @@ PPC_A %>%
   geom_col()
 ```
 
+```{r}
+PPC_A_map <- left_join(map,filter(PPC_A, anyo == 2023))
+PPC_A_map %>% 
+  #mutate(PPC_real_cut = eurostat::cut_to_classes(PPC_real,n = 5)) %>% 
+  ggplot() +
+  geom_sf(aes(geometry = geometry, fill = PPC_real)) +
+  coord_sf(xlim = c(-25,45), ylim = c(30,70)) +
+  scale_fill_viridis_c(option = "magma") +
+  theme_minimal()
+```
 
 # Descriptivo
 
