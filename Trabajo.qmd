@@ -41,7 +41,7 @@ map %>%
 
 # Introducción
 
-# Planteamiento problema
+# Planteamiento del problema
 
 ## Indicadores
 
@@ -64,7 +64,7 @@ gini_anyo %>%
   ggplot() +
   geom_sf(aes(geometry = geometry, fill = gini_cut)) +
   coord_sf(xlim = c(-25,45), ylim = c(30,70)) +
-  scale_fill_viridis_d(option = "magma") +
+  scale_fill_viridis_d(option = "magma", direction = -1) +
   theme_minimal()
 ```
 
@@ -296,7 +296,7 @@ EF <- EF %>% mutate(EF = PF_GDP / PPC * 100) %>% select(geo,anyo,EF)
 left_join(map,filter(EF, anyo == 2022)) %>%
   ggplot() +
   geom_sf(aes(geometry = geometry, fill = EF)) +
-  geom_sf_text(aes(label = round(EF,2)), color = "white", size = 2.5) +
+  geom_sf_label(aes(label = round(EF,2)), size = 2.5) +
   coord_sf(xlim = c(-25,45), ylim = c(30,70)) +
   scale_fill_viridis_c(option = "magma", direction = -1) +
   theme_minimal()
@@ -325,6 +325,131 @@ EF %>%
         panel.grid.minor.x = element_line(linetype = 8),
         aspect.ratio = 4/3)
 ```
+
+### Deuda pública
+
+```{r}
+Deuda_PIB <- get_eurostat("gov_10dd_edpt1", filters = list(na_item = "GD", sector = "S13", unit = "PC_GDP")) %>% filter(!is.na(values)) %>% mutate(anyo = year(time)) %>% select(geo,values,anyo)
+names(Deuda_PIB)[2] <- "Deuda_PIB"
+Deuda_PIB$geo[Deuda_PIB$geo == "EU27_2020"] <- "EU27"
+```
+
+```{r}
+Deuda_PIB %>%
+  filter(anyo == 2022 & !(geo %in% c("EA19","EA20"))) %>%
+  mutate(color = case_when(geo == "ES" ~ "1",
+                           geo == "EU27" ~ "2",
+                           geo != "ES" & geo != "EU27" ~ "0")) %>%
+  ggplot(aes(x = Deuda_PIB, y = reorder(geo,Deuda_PIB))) + 
+  geom_col(width = 0.4, aes(fill = color)) +
+  geom_text(aes(label = paste(Deuda_PIB,"%"), x = Deuda_PIB + 15), col = "#646363", size = 2) +
+  labs(title = "Deuda Pública", subtitle = "% sobre el PIB", caption = "Fuente: Eurostat") +
+  scale_fill_manual(values = c("#d8d8d7","#c01717","#2873b7"),breaks = c("0","1","2")) +
+  theme_minimal() +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        legend.position = "none",
+        panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_line(linetype = 8),
+        panel.grid.minor.x = element_line(linetype = 8),
+        aspect.ratio = 4/3)
+```
+
+```{r}
+left_join(map,filter(Deuda_PIB, anyo == 2022)) %>%
+  ggplot() +
+  geom_sf(aes(geometry = geometry, fill = Deuda_PIB)) +
+  geom_sf_label(aes(label = Deuda_PIB), size = 2.5) +
+  coord_sf(xlim = c(-25,45), ylim = c(30,70)) +
+  scale_fill_viridis_c(option = "magma", direction = -1) +
+  theme_minimal()
+```
+
+### Gasto Público
+
+```{r}
+Gasto_PIB <- get_eurostat("gov_10a_main", filters = list(na_item = "TE", sector = "S13", unit = "PC_GDP")) %>% filter(!is.na(values)) %>% mutate(anyo = year(time)) %>% select(geo,values,anyo)
+
+Gasto_PIB$geo[Gasto_PIB$geo == "EU27_2020"] <- "EU27"
+
+names(Gasto_PIB)[2] <- "Gasto_PIB"
+```
+
+```{r}
+Gasto_PIB %>%
+  filter(anyo == 2022 & !(geo %in% c("EA19","EA20"))) %>%
+  mutate(color = case_when(geo == "ES" ~ "1",
+                           geo == "EU27" ~ "2",
+                           geo != "ES" & geo != "EU27" ~ "0")) %>%
+  ggplot(aes(x = Gasto_PIB, y = reorder(geo,Gasto_PIB))) + 
+  geom_col(width = 0.4, aes(fill = color)) +
+  geom_text(aes(label = paste(Gasto_PIB,"%"), x = Gasto_PIB + 5), col = "#646363", size = 2) +
+  labs(title = "Gasto Público", subtitle = "% sobre el PIB", caption = "Fuente: Eurostat") +
+  scale_fill_manual(values = c("#d8d8d7","#c01717","#2873b7"),breaks = c("0","1","2")) +
+  theme_minimal() +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        legend.position = "none",
+        panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_line(linetype = 8),
+        panel.grid.minor.x = element_line(linetype = 8),
+        aspect.ratio = 4/3)
+```
+
+```{r}
+left_join(map,filter(Gasto_PIB, anyo == 2022)) %>%
+  ggplot() +
+  geom_sf(aes(geometry = geometry, fill = Gasto_PIB)) +
+  geom_sf_label(aes(label = Gasto_PIB), size = 2.5) +
+  coord_sf(xlim = c(-25,45), ylim = c(30,70)) +
+  scale_fill_viridis_c(option = "magma", direction = -1) +
+  theme_minimal()
+```
+
+### Tasa de Paro
+
+```{r}
+Paro_M <- get_eurostat("une_rt_m", filters = list(age = "TOTAL", s_adj = "SA", sex = "T", unit = "PC_ACT")) %>% filter(!is.na(values)) %>% select(geo,time,values)
+names(Paro_M)[3] <- "Tasa_Paro"
+Paro_M$geo[Paro_M$geo == "EU27_2020"] <- "EU27"
+Paro_A <- Paro_M %>% mutate(anyo = year(time)) %>% 
+  group_by(geo,anyo) %>% 
+  summarise(Tasa_Paro = mean(Tasa_Paro, na.rm = TRUE))
+```
+
+```{r}
+Paro_A %>%
+  filter(anyo == 2022 & !(geo %in% c("EA19","EA20"))) %>%
+  mutate(color = case_when(geo == "ES" ~ "1",
+                           geo == "EU27" ~ "2",
+                           geo != "ES" & geo != "EU27" ~ "0")) %>%
+  ggplot(aes(x = Tasa_Paro, y = reorder(geo,Tasa_Paro))) + 
+  geom_col(width = 0.4, aes(fill = color)) +
+  geom_text(aes(label = paste(round(Tasa_Paro,2),"%"), x = Tasa_Paro + 1), col = "#646363", size = 2) +
+  labs(title = "Tasa de Paro", subtitle = "% sobre la población activa", caption = "Fuente: Eurostat") +
+  scale_fill_manual(values = c("#d8d8d7","#c01717","#2873b7"),breaks = c("0","1","2")) +
+  theme_minimal() +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        legend.position = "none",
+        panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_line(linetype = 8),
+        panel.grid.minor.x = element_line(linetype = 8),
+        aspect.ratio = 4/3)
+```
+
+```{r}
+left_join(map,filter(Paro_A, anyo == 2022)) %>%
+  ggplot() +
+  geom_sf(aes(geometry = geometry, fill = Tasa_Paro)) +
+  geom_sf_label(aes(label = round(Tasa_Paro,2)), size = 2.5) +
+  coord_sf(xlim = c(-25,45), ylim = c(30,70)) +
+  scale_fill_viridis_c(option = "magma", direction = -1) +
+  theme_minimal()
+```
+
+
+
 
 # Descriptivo
 
