@@ -1,11 +1,16 @@
 ---
 title: "Trabajo Decente y Crecimiento Económico"
 author: "Sofia Melcarne, Carlos Gila y Enrique Sayas"
-format: html
-editor: visual
+format: 
+  html:
+    toc: true
+    toc-title: Índice
+    toc-location: right
+editor: source
 ---
 
 ```{r}
+#| include: false
 rm(list=ls())
 # Especificamos las librerías necesarias en esta lista
 
@@ -24,14 +29,20 @@ package.check <- lapply(packages, FUN = function(x) {
 #verify they are loaded
 search()
 ```
+```{r}
+#| include: false
+miembros_UE27 <- c("BE","EL","LT","PT","BG","ES","LU","RO","CZ","FR","HU","SI","DK","HR","MT","SK","DE","IT","NL","FI","EE","CY","AT","SE","IE","LV","PL")
+```
 
 ```{r}
+#| include: false
 map <- eurostat::get_eurostat_geospatial(nuts_level = 0)
 map <- map %>% select(NAME_LATN,geo,geometry)
 map$geo[map$geo == "EU27_2020"] <- "EU27"
 ```
 
 ```{r}
+#| include: false
 map %>% 
   ggplot() +
   geom_sf() +
@@ -43,124 +54,26 @@ map %>%
 
 # Planteamiento del problema
 
-## Indicadores
+# Creación del Indicador
 
-### Índice de Gini
+## Variables
 
-```{r}
-gini <- get_eurostat("ilc_di12")
-gini <- gini %>% mutate(year = year(TIME_PERIOD)) %>% select(-c(indic_il,freq)) %>% filter(!str_detect(geo,"EU|EA|NMS"))
-names(gini)[3] <- "gini"
-gini$geo[gini$geo == "EU27_2020"] <- "EU27"
-```
+### PIB per Capita
 
 ```{r}
-gini_anyo <- left_join(map,filter(gini, year == 2022),by = "geo")
-```
-
-```{r}
-gini_anyo %>%
-  mutate(gini_cut = eurostat::cut_to_classes(gini,n = 5)) %>% 
-  ggplot() +
-  geom_sf(aes(geometry = geometry, fill = gini_cut)) +
-  coord_sf(xlim = c(-25,45), ylim = c(30,70)) +
-  scale_fill_viridis_d(option = "magma", direction = -1) +
-  theme_minimal()
-```
-
-```{r}
-anyo <- 2022
-anyo2 <- anyo - 1
-
-gini_eu <- gini %>%
-  filter(year == anyo) %>%
-  group_by(year) %>% 
-  summarise(gini_eu = mean(gini, na.rm = TRUE)) %>%
-  ungroup()
-
-nombres <- gini %>%
-  select(geo, year,gini) %>%
-  filter(year == anyo)
-
-gini_eu <- left_join(nombres,gini_eu, by = "year")
-
-gini_anyo1 <- gini %>% filter(year == anyo)
-gini_anyo2 <- gini %>% filter(year == anyo2 & geo %in% gini_anyo1$geo)
-```
-
-```{r}
-gini_anyo1 %>%
-  
-  ggplot(aes(x = gini, y = reorder(geo, desc(gini)))) +
-  
-  geom_segment(data = gini_eu, aes(x = gini, xend = gini_eu), size = 1.25, color = "#cccccf") +
-  
-  geom_vline(data = gini_eu, aes(xintercept = unique(gini_eu), color = "Media Europea"), size = 1) +
-  
-  geom_point(aes(color = as.character(anyo)), size = 4) +
-  
-  geom_point(data = gini_anyo2, aes(x = gini, color = as.character(anyo2)), size = 3) +
-  
-  labs(x = "Índice Gini", y = "", title = "Índice de Gini", color = "Leyenda") +
-  
-  scale_color_manual(values = c("#797979","#2e9fd9","#bcb7b0")) +
-  
-  theme_minimal()
-```
-
-### Población
-
-```{r}
+#| include: false
 pob <- get_eurostat("demo_pjan") %>% select(-c(freq,unit))
 names(pob)[5] <- "pob"
 pob$geo[pob$geo == "EU27_2020"] <- "EU27"
 ```
 
 ```{r}
+#| include: false
 pob_total <- pob %>% filter(age == "TOTAL" & sex == "T") %>% mutate(anyo = year(TIME_PERIOD)) %>% select(-c(age,sex))
 ```
 
 ```{r}
-pob_sex_edad <- pob %>% filter(!(age %in% c("Y_OPEN","UNK","TOTAL")) & sex != "T") %>% mutate(anyo = year(TIME_PERIOD))
-```
-
-```{r}
-pob_sex_edad$age <- str_remove(pob_sex_edad$age,"Y")
-pob_sex_edad$age[pob_sex_edad$age == "_LT1"] <- "0"
-pob_sex_edad$age <- as.numeric(pob_sex_edad$age)
-```
-
-```{r}
-# pob_sex_edad %>% 
-#   filter(geo == "ES" & anyo == 2023) %>%
-#   mutate(pob = ifelse(sex == "F", pob, -pob) / sum(pob) * 100) %>% 
-#   ggplot() +
-#   geom_col(aes(x = age, y = pob, fill = sex)) +
-#   coord_flip() +
-#   theme_minimal()
-```
-
-```{r}
-pob_sex_edad_5 <- pob_sex_edad %>% mutate(age_5 = paste(str_pad(string = age %/% 5 * 5, width = 2,side = "left", pad = "0"),"-",str_pad(age %/% 5 * 5 + 4, width = 2,side = "left", pad = "0")))
-pob_sex_edad_5 <- pob_sex_edad_5 %>%
-  group_by(age_5,sex,geo,anyo) %>% 
-  summarise(pob = sum(pob, na.rm = TRUE))
-```
-
-```{r}
-pob_sex_edad_5 %>%
-  ungroup() %>% 
-  filter(geo == "ES" & anyo == 2023) %>%
-  mutate(pob = ifelse(sex == "F", pob, -pob) / sum(pob) * 100) %>% 
-  ggplot(aes(x = pob, y = age_5)) +
-  geom_col(aes(fill = sex)) +
-  labs(title = "Pirámide Poblacional", x = "%", y = "Rando de Edad", caption = "Fuente: Eurostat") +
-  theme_minimal()
-```
-
-### PIB per Capita
-
-```{r}
+#| include: false
 PIB_Q <- get_eurostat("namq_10_gdp", filters = list(na_item = "B1GQ", s_adj = "SCA", unit = "CP_MEUR")) %>% select(geo,time,values)
 names(PIB_Q)[3] <- "PIB"
 PIB_Q <- PIB_Q %>% filter(!is.na(PIB)) %>% mutate(anyo = year(time), PIB = PIB * 1000000)
@@ -168,6 +81,7 @@ PIB_Q$geo[PIB_Q$geo == "EU27_2020"] <- "EU27"
 ```
 
 ```{r}
+#| include: false
 IPC_2005_Q <- get_eurostat("namq_10_gdp", filters = list(na_item = "B1GQ", s_adj = "SCA", unit = "PD05_EUR")) %>% select(geo,time,values)
 names(IPC_2005_Q)[3] <- "IPC"
 IPC_2005_Q <- IPC_2005_Q %>% filter(!is.na(IPC)) %>% mutate(anyo = year(time))
@@ -175,11 +89,14 @@ IPC_2005_Q$geo[IPC_2005_Q$geo == "EU27_2020"] <- "EU27"
 ```
 
 ```{r}
+#| include: false
 PPC_Q <- right_join(PIB_Q,pob_total) %>% select(-TIME_PERIOD)
 PPC_Q <- PPC_Q %>% mutate(PPC = PIB / pob)
 ```
 
 ```{r}
+#| echo: false
+#| warning: false
 PPC_Q %>% 
   filter(geo %in% c("ES","DE","FR","EE")) %>% 
   ggplot(aes(x = time, y = PPC, color = geo)) +
@@ -188,11 +105,14 @@ PPC_Q %>%
 ```
 
 ```{r}
+#| include: false
 PPC_Q <- right_join(PPC_Q,select(IPC_2005_Q,-anyo), by = c("geo","time"))
 PPC_Q <- PPC_Q %>% mutate(PPC_real = PPC * 100 / IPC) %>% select(geo,time,anyo,PPC,PPC_real)
 ```
 
 ```{r}
+#| echo: false
+#| message: false
 PPC_Q %>% 
   filter(geo %in% c("ES","DE","FR","CY","PT","EE") & !is.na(PPC_real)) %>% 
   ggplot(aes(x = time, y = PPC_real, color = geo)) +
@@ -201,24 +121,143 @@ PPC_Q %>%
 ```
 
 ```{r}
+#| include: false
 PIB_A <- PIB_Q %>% group_by(geo,anyo) %>% summarise(PIB = sum(PIB, na.rm = TRUE))
 PIB_A
 ```
 
 ```{r}
+#| include: false
 PPC_A <- PPC_Q %>% group_by(geo,anyo) %>% summarise(PPC = sum(PPC, na.rm = TRUE), PPC_real = sum(PPC_real, na.rm = TRUE))
 PPC_A
 ```
 
 ```{r}
+#| echo: false
+#| message: false
 PPC_A %>%
-  filter(anyo == 2022 & !(geo %in% c("EA19","EA20"))) %>%
-  mutate(color = case_when(geo == "ES" ~ "1",
-                           geo == "EU27" ~ "2",
-                           geo != "ES" & geo != "EU27" ~ "0")) %>%
+  filter(anyo == 2022 & geo %in% c(miembros_UE27,"EU27")) %>%
+  mutate(color = case_when(geo == "ES" ~ "ES",
+                           geo == "EU27" ~ "EU27",
+                           geo != "ES" & geo != "EU27" ~ "Otros")) %>%
   ggplot(aes(x = PPC_real, y = reorder(geo,PPC_real))) + 
   geom_col(width = 0.4, aes(fill = color)) +
   labs(title = "PIB per Capita", subtitle = "Índice de Precios 2005=100, euro", caption = "Fuente: Eurostat") +
+  scale_fill_manual(values = c("#d8d8d7","#c01717","#2873b7"),breaks = c("Otros","ES","EU27")) +
+  theme_minimal() +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        legend.position = "none",
+        panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_line(linetype = 8),
+        panel.grid.minor.x = element_line(linetype = 8),
+        aspect.ratio = 4/3)
+```
+
+```{r}
+#| echo: false
+#| message: false
+left_join(map,filter(PPC_A, anyo == 2023)) %>% 
+  #mutate(PPC_real_cut = eurostat::cut_to_classes(PPC_real,n = 5)) %>% 
+  ggplot() +
+  geom_sf(aes(geometry = geometry, fill = PPC_real)) +
+  coord_sf(xlim = c(-25,45), ylim = c(30,70)) +
+  scale_fill_viridis_c(option = "magma") +
+  theme_minimal()
+```
+
+#### Variación PPC (2018-2023)
+
+```{r}
+#| include: false
+dif_PPC_A <- PPC_A %>% 
+  filter(anyo %in% c(2018,2023) & !str_detect(geo,"EA")) %>%
+  pivot_longer(c(PPC,PPC_real),names_to = "tipo", values_to = "valor") %>% 
+  pivot_wider(names_from = anyo, values_from = valor) %>% 
+  mutate(dif_por = (`2023` - `2018`)/`2018` * 100)
+```
+
+```{r}
+#| echo: false
+#| message: false
+dif_PPC_EU <- dif_PPC_A %>%
+  ungroup() %>%
+  filter(geo %in% miembros_UE27 & tipo == "PPC") %>% 
+  summarise(media = mean(dif_por))
+
+dif_PPC_EU <- cbind(dif_PPC_EU,x = "FI")
+
+dif_PPC_A %>%
+  ungroup() %>%
+  filter(tipo == "PPC" & geo %in% miembros_UE27 & !is.na(dif_por)) %>%
+  mutate(texto = ifelse(dif_por == max(dif_por) | geo == "ES",dif_por,NA),
+         color = ifelse(geo == "ES","ES","Otros")) %>%
+  ggplot(aes(x = reorder(geo,desc(dif_por)), y = dif_por)) +
+  geom_col(aes(fill = color), width = 0.6) +
+  geom_text(aes(y = dif_por + 3, label = round(texto,1), color = color), size = 3) +
+  geom_hline(data = dif_PPC_EU, aes(yintercept = media), color = "#2873b7") +
+  geom_text(data = dif_PPC_EU, aes(x = x, y = media + 6, label = paste("Media\n UE:", round(media,1))), color = "#2873b7") +
+  labs(title = "Crecimiento (%) del PPC (2018-2023)") +
+  scale_fill_manual(values = c("#d8d8d7","#c01717"),breaks = c("Otros","ES")) +
+  scale_color_manual(values = c("#d8d8d7","#c01717"),breaks = c("Otros","ES")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        legend.position = "none",
+        panel.grid.major.x = element_blank())
+```
+
+```{r}
+dif_PPC_EU_real <- dif_PPC_A %>%
+  ungroup() %>%
+  filter(geo %in% miembros_UE27 & tipo == "PPC_real") %>% 
+  summarise(media = mean(dif_por))
+
+dif_PPC_EU_real <- cbind(dif_PPC_EU_real,x = "DE")
+
+dif_PPC_A %>%
+  ungroup() %>%
+  filter(tipo == "PPC_real" & !is.na(dif_por) & geo %in% miembros_UE27) %>%
+  mutate(texto = ifelse(dif_por == max(dif_por) | geo == "ES",dif_por,NA),
+         color = ifelse(geo == "ES","ES","Otros")) %>%
+  ggplot(aes(x = reorder(geo,desc(dif_por)), y = dif_por)) +
+  geom_col(aes(fill = color), width = 0.6) +
+  geom_text(aes(y = dif_por + 1, label = round(texto,1), color = color), size = 3) +
+  geom_hline(data = dif_PPC_EU_real, aes(yintercept = media), color = "#2873b7") +
+  geom_text(data = dif_PPC_EU_real, aes(x = x, y = media + 2, label = paste("Media\n UE:", round(media,1))), color = "#2873b7") +
+  labs(title = "Crecimiento real (%) del PPC (2018-2023)", subtitle = "Índice de Precios 2005=100, euro") +
+  scale_fill_manual(values = c("#d8d8d7","#c01717"),breaks = c("Otros","ES")) +
+  scale_color_manual(values = c("#d8d8d7","#c01717"),breaks = c("Otros","ES")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        legend.position = "none",
+        panel.grid.major.x = element_blank())
+```
+
+### Tasa de Paro
+
+```{r}
+Paro_M <- get_eurostat("une_rt_m", filters = list(age = "TOTAL", s_adj = "SA", sex = "T", unit = "PC_ACT")) %>% filter(!is.na(values)) %>% select(geo,time,values)
+names(Paro_M)[3] <- "Tasa_Paro"
+Paro_M$geo[Paro_M$geo == "EU27_2020"] <- "EU27"
+Paro_A <- Paro_M %>% mutate(anyo = year(time)) %>% 
+  group_by(geo,anyo) %>% 
+  summarise(Tasa_Paro = mean(Tasa_Paro, na.rm = TRUE))
+```
+
+```{r}
+Paro_A %>%
+  filter(anyo == 2023 & !(geo %in% c("EA19","EA20"))) %>%
+  mutate(color = case_when(geo == "ES" ~ "1",
+                           geo == "EU27" ~ "2",
+                           geo != "ES" & geo != "EU27" ~ "0")) %>%
+  ggplot(aes(x = Tasa_Paro, y = reorder(geo,Tasa_Paro))) + 
+  geom_col(width = 0.4, aes(fill = color)) +
+  geom_text(aes(label = paste(round(Tasa_Paro,2),"%"), x = Tasa_Paro + 1), col = "#646363", size = 2) +
+  labs(title = "Tasa de Paro", subtitle = "% sobre la población activa", caption = "Fuente: Eurostat") +
   scale_fill_manual(values = c("#d8d8d7","#c01717","#2873b7"),breaks = c("0","1","2")) +
   theme_minimal() +
   theme(axis.title.x = element_blank(),
@@ -231,14 +270,53 @@ PPC_A %>%
 ```
 
 ```{r}
-left_join(map,filter(PPC_A, anyo == 2023)) %>% 
-  #mutate(PPC_real_cut = eurostat::cut_to_classes(PPC_real,n = 5)) %>% 
+left_join(map,filter(Paro_A, anyo == 2023)) %>%
   ggplot() +
-  geom_sf(aes(geometry = geometry, fill = PPC_real)) +
+  geom_sf(aes(geometry = geometry, fill = Tasa_Paro)) +
+  geom_sf_label(aes(label = round(Tasa_Paro,2)), size = 2.5) +
   coord_sf(xlim = c(-25,45), ylim = c(30,70)) +
-  scale_fill_viridis_c(option = "magma") +
+  scale_fill_viridis_c(option = "magma", direction = -1) +
   theme_minimal()
 ```
+
+#### Variación Tasa de paro (2018-2023)
+
+```{r}
+dif_Paro_A <- Paro_A %>% 
+  filter(anyo %in% c(2018,2023) & !str_detect(geo,"EA")) %>%
+  pivot_wider(names_from = anyo, values_from = "Tasa_Paro") %>% 
+  mutate(dif_por = (`2023` - `2018`)/`2018` * 100)
+```
+
+```{r}
+dif_Paro_EU <- dif_Paro_A %>%
+  ungroup() %>%
+  filter(geo %in% miembros_UE27) %>% 
+  summarise(media = mean(dif_por))
+
+dif_Paro_EU <- cbind(dif_Paro_EU,x = "SE")
+
+dif_Paro_A %>%
+  ungroup() %>%
+  filter(geo %in% miembros_UE27 & !is.na(dif_por)) %>%
+  mutate(texto = ifelse(dif_por == min(dif_por) | geo == "ES",dif_por,NA),
+         color = ifelse(geo == "ES","ES","Otros")) %>%
+  ggplot(aes(x = reorder(geo,dif_por), y = dif_por)) +
+  geom_col(aes(fill = color), width = 0.6) +
+  geom_text(aes(y = dif_por - 2, label = round(texto,1), color = color), size = 3) +
+  geom_hline(data = dif_Paro_EU, aes(yintercept = media), color = "#2873b7") +
+  geom_text(data = dif_Paro_EU, aes(x = x, y = media - 6, label = paste("Media\n UE:", round(media,1))), color = "#2873b7") +
+  labs(title = "Crecimiento (%) de la Tasa de Paro (2018-2023)") +
+  scale_fill_manual(values = c("#d8d8d7","#c01717"),breaks = c("Otros","ES")) +
+  scale_color_manual(values = c("#d8d8d7","#c01717"),breaks = c("Otros","ES")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        legend.position = "none",
+        panel.grid.major.x = element_blank())
+```
+
 
 ### Presión Fiscal
 
@@ -285,36 +363,63 @@ PF %>%
         aspect.ratio = 4/3)
 ```
 
-### Esfuerzo Fiscal
+#### Variación Presión Fiscal (2018-2022)
 
 ```{r}
-EF <- left_join(PF,PPC_A, by = c("geo","anyo"))
-EF <- EF %>% mutate(EF = PF_GDP / PPC * 100) %>% select(geo,anyo,EF)
+dif_PF_A <- PF %>% 
+  filter(anyo %in% c(2018,2022) & !str_detect(geo,"EA")) %>%
+  pivot_wider(names_from = anyo, values_from = "PF_GDP") %>% 
+  mutate(dif_por = (`2022` - `2018`)/`2018` * 100)
 ```
 
 ```{r}
-left_join(map,filter(EF, anyo == 2022)) %>%
-  ggplot() +
-  geom_sf(aes(geometry = geometry, fill = EF)) +
-  geom_sf_label(aes(label = round(EF,2)), size = 2.5) +
-  coord_sf(xlim = c(-25,45), ylim = c(30,70)) +
-  scale_fill_viridis_c(option = "magma", direction = -1) +
-  theme_minimal()
+dif_PF_EU <- dif_PF_A %>%
+  ungroup() %>%
+  filter(geo %in% miembros_UE27) %>% 
+  summarise(media = mean(dif_por))
+
+dif_PF_EU <- cbind(dif_PF_EU,x = "NL")
+
+dif_PF_A %>%
+  ungroup() %>%
+  filter(geo %in% miembros_UE27 & !is.na(dif_por)) %>%
+  mutate(texto = ifelse(dif_por == min(dif_por) | geo == "ES",dif_por,NA),
+         color = ifelse(geo == "ES","ES","Otros")) %>%
+  ggplot(aes(x = reorder(geo,dif_por), y = dif_por)) +
+  geom_col(aes(fill = color), width = 0.6) +
+  geom_text(aes(y = ifelse(dif_por >= 0, dif_por + 0.5,dif_por - 0.5), label = round(texto,1), color = color), size = 3) +
+  geom_hline(data = dif_PF_EU, aes(yintercept = media), color = "#2873b7") +
+  geom_text(data = dif_PF_EU, aes(x = x, y = media + 1, label = paste("Media UE:", round(media,1))), color = "#2873b7") +
+  labs(title = "Crecimiento (%) de la Presión Fiscal (2018-2022)") +
+  scale_fill_manual(values = c("#d8d8d7","#c01717"),breaks = c("Otros","ES")) +
+  scale_color_manual(values = c("#d8d8d7","#c01717"),breaks = c("Otros","ES")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        legend.position = "none",
+        panel.grid.major.x = element_blank())
+```
+
+### Evolución del poder adquisitivo de las familias (PPA)
+
+```{r}
+PIB_PPA <- get_eurostat("tec00114") %>% filter(!is.na(values)) %>% mutate(anyo = year(TIME_PERIOD)) %>% select(geo,values,anyo)
+names(PIB_PPA)[2] <- "PIB_PPA"
+PIB_PPA$geo[PIB_PPA$geo == "EU27_2020"] <- "EU27"
 ```
 
 ```{r}
-anyo3 <- 2022
-EFEU <- EF$EF[EF$geo == "EU27" & EF$anyo == anyo3]
-EF %>% 
-  filter(anyo == anyo3 & !is.na(EF) & !str_detect(geo,"EA")) %>%
+anyo3 <- 2023
+PIB_PPA %>% 
+  filter(anyo == anyo3 & !str_detect(geo,"EA")) %>%
   mutate(color = case_when(geo == "ES" ~ "1",
                            geo == "EU27" ~ "2",
-                           geo != "ES" & geo != "EU27" ~ "0"),
-         EF_EU = EF * 100 / EFEU) %>%
-  ggplot(aes(x = EF_EU, y = reorder(geo,EF_EU))) + 
+                           geo != "ES" & geo != "EU27" ~ "0")) %>%
+  ggplot(aes(x = PIB_PPA, y = reorder(geo,PIB_PPA))) + 
   geom_col(width = 0.4, aes(fill = color)) +
-  geom_text(aes(label = round(EF_EU), x = EF_EU + 10), col = "#646363", size = 2) +
-  labs(title = "Esfuerzo Fiscal", subtitle = paste("Año:", anyo3), caption = "Fuente: Eurostat") +
+  geom_text(aes(label = PIB_PPA, x = PIB_PPA + 10), col = "#646363", size = 2) +
+  labs(title = "Poder adquisitivo de las familias", subtitle = paste("Año:", anyo3), caption = "Fuente: Eurostat") +
   scale_fill_manual(values = c("#d8d8d7","#c01717","#2873b7"),breaks = c("0","1","2")) +
   theme_minimal() +
   theme(axis.title.x = element_blank(),
@@ -324,6 +429,54 @@ EF %>%
         panel.grid.major.x = element_line(linetype = 8),
         panel.grid.minor.x = element_line(linetype = 8),
         aspect.ratio = 4/3)
+```
+
+```{r}
+left_join(map,filter(PIB_PPA, anyo == 2023)) %>%
+  ggplot() +
+  geom_sf(aes(geometry = geometry, fill = PIB_PPA)) +
+  geom_sf_label(aes(label = PIB_PPA), size = 2.5) +
+  coord_sf(xlim = c(-25,45), ylim = c(30,70)) +
+  scale_fill_viridis_c(option = "magma") +
+  theme_minimal()
+```
+
+#### Variación poder adquisitivo de las familias (PPA) (2018-2023)
+
+```{r}
+dif_PPA_A <- PIB_PPA %>% 
+  filter(anyo %in% c(2018,2023) & !str_detect(geo,"EA")) %>%
+  pivot_wider(names_from = anyo, values_from = "PIB_PPA") %>% 
+  mutate(dif_por = (`2023` - `2018`)/`2018` * 100)
+```
+
+```{r}
+dif_PPA_EU <- dif_PPA_A %>%
+  ungroup() %>%
+  filter(geo %in% miembros_UE27) %>% 
+  summarise(media = mean(dif_por))
+
+dif_PPA_EU <- cbind(dif_PPA_EU,x = "FR")
+
+dif_PPA_A %>%
+  ungroup() %>%
+  filter(geo %in% miembros_UE27 & !is.na(dif_por)) %>%
+  mutate(texto = ifelse(dif_por == max(dif_por) | geo == "ES",dif_por,NA),
+         color = ifelse(geo == "ES","ES","Otros")) %>%
+  ggplot(aes(x = reorder(geo,desc(dif_por)), y = dif_por)) +
+  geom_col(aes(fill = color), width = 0.6) +
+  geom_text(aes(y = ifelse(dif_por >= 0, dif_por + 1,dif_por - 1), label = round(texto,1), color = color), size = 3) +
+  geom_hline(data = dif_PPA_EU, aes(yintercept = media), color = "#2873b7") +
+  geom_text(data = dif_PPA_EU, aes(x = x, y = media + 1, label = paste("Media UE:", round(media,1))), color = "#2873b7") +
+  labs(title = "Crecimiento (%) del poder adquisitivo de las familias (2018-2023)") +
+  scale_fill_manual(values = c("#d8d8d7","#c01717"),breaks = c("Otros","ES")) +
+  scale_color_manual(values = c("#d8d8d7","#c01717"),breaks = c("Otros","ES")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        legend.position = "none",
+        panel.grid.major.x = element_blank())
 ```
 
 ### Deuda pública
@@ -362,6 +515,115 @@ left_join(map,filter(Deuda_PIB, anyo == 2022)) %>%
   geom_sf_label(aes(label = Deuda_PIB), size = 2.5) +
   coord_sf(xlim = c(-25,45), ylim = c(30,70)) +
   scale_fill_viridis_c(option = "magma", direction = -1) +
+  theme_minimal()
+```
+
+#### Variación Deuda Pública (2018-2022)
+
+```{r}
+dif_DP_A <- Deuda_PIB %>% 
+  filter(anyo %in% c(2018,2022) & !str_detect(geo,"EA")) %>%
+  pivot_wider(names_from = anyo, values_from = "Deuda_PIB") %>% 
+  mutate(dif_por = (`2022` - `2018`)/`2018` * 100)
+```
+
+```{r}
+dif_DP_EU <- dif_DP_A %>%
+  ungroup() %>%
+  filter(geo %in% miembros_UE27) %>% 
+  summarise(media = mean(dif_por))
+
+dif_DP_EU <- cbind(dif_DP_EU,x = "DK")
+
+dif_DP_A %>%
+  ungroup() %>%
+  filter(geo %in% miembros_UE27 & !is.na(dif_por)) %>%
+  mutate(texto = ifelse(dif_por == min(dif_por) | geo == "ES",dif_por,NA),
+         color = ifelse(geo == "ES","ES","Otros")) %>%
+  ggplot(aes(x = reorder(geo,dif_por), y = dif_por)) +
+  geom_col(aes(fill = color), width = 0.6) +
+  geom_text(aes(y = ifelse(dif_por >= 0, dif_por + 5,dif_por - 5), label = round(texto,1), color = color), size = 3) +
+  geom_hline(data = dif_DP_EU, aes(yintercept = media), color = "#2873b7") +
+  geom_text(data = dif_DP_EU, aes(x = x, y = media + 8, label = paste("Media UE:", round(media,1))), color = "#2873b7") +
+  labs(title = "Crecimiento (%) de la Deuda Pública sobre el PIB (2018-2022)") +
+  scale_fill_manual(values = c("#d8d8d7","#c01717"),breaks = c("Otros","ES")) +
+  scale_color_manual(values = c("#d8d8d7","#c01717"),breaks = c("Otros","ES")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        legend.position = "none",
+        panel.grid.major.x = element_blank())
+```
+
+# Descriptivo
+
+# Resultados
+
+# Conclusiones
+
+# Anexo
+
+### Índice de Gini
+
+```{r}
+gini <- get_eurostat("ilc_di12")
+gini <- gini %>% mutate(year = year(TIME_PERIOD)) %>% select(-c(indic_il,freq)) %>% filter(!str_detect(geo,"EU|EA|NMS"))
+names(gini)[3] <- "gini"
+gini$geo[gini$geo == "EU27_2020"] <- "EU27"
+```
+
+```{r}
+gini_anyo <- left_join(map,filter(gini, year == 2022),by = "geo")
+```
+
+```{r}
+gini_anyo %>%
+  mutate(gini_cut = eurostat::cut_to_classes(gini,n = 5)) %>% 
+  ggplot() +
+  geom_sf(aes(geometry = geometry, fill = gini_cut)) +
+  coord_sf(xlim = c(-25,45), ylim = c(30,70)) +
+  scale_fill_viridis_d(option = "magma", direction = -1) +
+  theme_minimal()
+```
+
+```{r}
+anyo <- 2022
+anyo2 <- 2018
+
+gini_eu <- gini %>%
+  filter(year == anyo) %>%
+  group_by(year) %>% 
+  summarise(gini_eu = mean(gini, na.rm = TRUE)) %>%
+  ungroup()
+
+nombres <- gini %>%
+  select(geo, year,gini) %>%
+  filter(year == anyo)
+
+gini_eu <- left_join(nombres,gini_eu, by = "year")
+
+gini_anyo1 <- gini %>% filter(year == anyo)
+gini_anyo2 <- gini %>% filter(year == anyo2 & geo %in% gini_anyo1$geo)
+```
+
+```{r}
+gini_anyo1 %>%
+  
+  ggplot(aes(x = gini, y = reorder(geo, desc(gini)))) +
+  
+  geom_segment(data = gini_eu, aes(x = gini, xend = gini_eu), size = 1.25, color = "#cccccf") +
+  
+  geom_vline(data = gini_eu, aes(xintercept = unique(gini_eu), color = "Media Europea"), size = 1) +
+  
+  geom_point(aes(color = as.character(anyo)), size = 4) +
+  
+  geom_point(data = gini_anyo2, aes(x = gini, color = as.character(anyo2)), size = 3) +
+  
+  labs(x = "Índice Gini", y = "", title = "Índice de Gini", color = "Leyenda") +
+  
+  scale_color_manual(values = c("#797979","#2e9fd9","#bcb7b0")) +
+  
   theme_minimal()
 ```
 
@@ -405,28 +667,75 @@ left_join(map,filter(Gasto_PIB, anyo == 2022)) %>%
   scale_fill_viridis_c(option = "magma", direction = -1) +
   theme_minimal()
 ```
-
-### Tasa de Paro
+#### Variación Gasto Público (2018-2022)
 
 ```{r}
-Paro_M <- get_eurostat("une_rt_m", filters = list(age = "TOTAL", s_adj = "SA", sex = "T", unit = "PC_ACT")) %>% filter(!is.na(values)) %>% select(geo,time,values)
-names(Paro_M)[3] <- "Tasa_Paro"
-Paro_M$geo[Paro_M$geo == "EU27_2020"] <- "EU27"
-Paro_A <- Paro_M %>% mutate(anyo = year(time)) %>% 
-  group_by(geo,anyo) %>% 
-  summarise(Tasa_Paro = mean(Tasa_Paro, na.rm = TRUE))
+dif_GP_A <- Gasto_PIB %>% 
+  filter(anyo %in% c(2018,2022) & !str_detect(geo,"EA")) %>%
+  pivot_wider(names_from = anyo, values_from = "Gasto_PIB") %>% 
+  mutate(dif_por = (`2022` - `2018`)/`2018` * 100)
 ```
 
 ```{r}
-Paro_A %>%
-  filter(anyo == 2022 & !(geo %in% c("EA19","EA20"))) %>%
+dif_GP_EU <- dif_GP_A %>%
+  ungroup() %>%
+  filter(geo %in% miembros_UE27) %>% 
+  summarise(media = mean(dif_por))
+
+dif_GP_EU <- cbind(dif_GP_EU,x = "SE")
+
+dif_GP_A %>%
+  ungroup() %>%
+  filter(geo %in% miembros_UE27 & !is.na(dif_por)) %>%
+  mutate(texto = ifelse(dif_por == min(dif_por) | geo == "ES",dif_por,NA),
+         color = ifelse(geo == "ES","ES","Otros")) %>%
+  ggplot(aes(x = reorder(geo,dif_por), y = dif_por)) +
+  geom_col(aes(fill = color), width = 0.6) +
+  geom_text(aes(y = ifelse(dif_por >= 0, dif_por + 1,dif_por - 1), label = round(texto,1), color = color), size = 3) +
+  geom_hline(data = dif_GP_EU, aes(yintercept = media), color = "#2873b7") +
+  geom_text(data = dif_GP_EU, aes(x = x, y = media + 1, label = paste("Media UE:", round(media,1))), color = "#2873b7") +
+  labs(title = "Crecimiento (%) del Gasto Público sobre el PIB (2018-2022)") +
+  scale_fill_manual(values = c("#d8d8d7","#c01717"),breaks = c("Otros","ES")) +
+  scale_color_manual(values = c("#d8d8d7","#c01717"),breaks = c("Otros","ES")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        legend.position = "none",
+        panel.grid.major.x = element_blank())
+```
+
+
+### Esfuerzo Fiscal
+
+```{r}
+EF <- left_join(PF,PPC_A, by = c("geo","anyo"))
+EF <- EF %>% mutate(EF = PF_GDP / PPC * 100) %>% select(geo,anyo,EF)
+```
+
+```{r}
+left_join(map,filter(EF, anyo == 2022)) %>%
+  ggplot() +
+  geom_sf(aes(geometry = geometry, fill = EF)) +
+  geom_sf_label(aes(label = round(EF,2)), size = 2.5) +
+  coord_sf(xlim = c(-25,45), ylim = c(30,70)) +
+  scale_fill_viridis_c(option = "magma", direction = -1) +
+  theme_minimal()
+```
+
+```{r}
+anyo3 <- 2022
+EFEU <- EF$EF[EF$geo == "EU27" & EF$anyo == anyo3]
+EF %>% 
+  filter(anyo == anyo3 & !is.na(EF) & !str_detect(geo,"EA")) %>%
   mutate(color = case_when(geo == "ES" ~ "1",
                            geo == "EU27" ~ "2",
-                           geo != "ES" & geo != "EU27" ~ "0")) %>%
-  ggplot(aes(x = Tasa_Paro, y = reorder(geo,Tasa_Paro))) + 
+                           geo != "ES" & geo != "EU27" ~ "0"),
+         EF_EU = EF * 100 / EFEU) %>%
+  ggplot(aes(x = EF_EU, y = reorder(geo,EF_EU))) + 
   geom_col(width = 0.4, aes(fill = color)) +
-  geom_text(aes(label = paste(round(Tasa_Paro,2),"%"), x = Tasa_Paro + 1), col = "#646363", size = 2) +
-  labs(title = "Tasa de Paro", subtitle = "% sobre la población activa", caption = "Fuente: Eurostat") +
+  geom_text(aes(label = round(EF_EU), x = EF_EU + 10), col = "#646363", size = 2) +
+  labs(title = "Esfuerzo Fiscal", subtitle = paste("Año:", anyo3), caption = "Fuente: Eurostat") +
   scale_fill_manual(values = c("#d8d8d7","#c01717","#2873b7"),breaks = c("0","1","2")) +
   theme_minimal() +
   theme(axis.title.x = element_blank(),
@@ -438,21 +747,40 @@ Paro_A %>%
         aspect.ratio = 4/3)
 ```
 
+#### Variación Esfuerzo Fiscal (2018-2022)
+
 ```{r}
-left_join(map,filter(Paro_A, anyo == 2022)) %>%
-  ggplot() +
-  geom_sf(aes(geometry = geometry, fill = Tasa_Paro)) +
-  geom_sf_label(aes(label = round(Tasa_Paro,2)), size = 2.5) +
-  coord_sf(xlim = c(-25,45), ylim = c(30,70)) +
-  scale_fill_viridis_c(option = "magma", direction = -1) +
-  theme_minimal()
+dif_EF_A <- EF %>% 
+  filter(anyo %in% c(2018,2022) & !str_detect(geo,"EA")) %>%
+  pivot_wider(names_from = anyo, values_from = "EF") %>% 
+  mutate(dif_por = (`2022` - `2018`)/`2018` * 100)
 ```
 
+```{r}
+dif_EF_EU <- dif_EF_A %>%
+  ungroup() %>%
+  filter(geo %in% miembros_UE27) %>% 
+  summarise(media = mean(dif_por))
 
+dif_EF_EU <- cbind(dif_EF_EU,x = "FR")
 
-
-# Descriptivo
-
-# Resultados
-
-# Conclusiones
+dif_EF_A %>%
+  ungroup() %>%
+  filter(geo %in% miembros_UE27 & !is.na(dif_por)) %>%
+  mutate(texto = ifelse(dif_por == min(dif_por) | geo == "ES",dif_por,NA),
+         color = ifelse(geo == "ES","ES","Otros")) %>%
+  ggplot(aes(x = reorder(geo,dif_por), y = dif_por)) +
+  geom_col(aes(fill = color), width = 0.6) +
+  geom_text(aes(y = ifelse(dif_por >= 0, dif_por + 0.5,dif_por - 0.5), label = round(texto,1), color = color), size = 3) +
+  geom_hline(data = dif_EF_EU, aes(yintercept = media), color = "#2873b7") +
+  geom_text(data = dif_EF_EU, aes(x = x, y = media - 3, label = paste("Media\n UE:", round(media,1))), color = "#2873b7") +
+  labs(title = "Crecimiento (%) del Esfuerzo Fiscal (2018-2022)") +
+  scale_fill_manual(values = c("#d8d8d7","#c01717"),breaks = c("Otros","ES")) +
+  scale_color_manual(values = c("#d8d8d7","#c01717"),breaks = c("Otros","ES")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        legend.position = "none",
+        panel.grid.major.x = element_blank())
+```
