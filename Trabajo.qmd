@@ -927,6 +927,7 @@ ranking <- indicador_norma %>%
 ```{r}
 #| echo: false
 #| warning: false
+
 ranking_tabla <- ranking %>% left_join(map %>% select(NAME_LATN,geo))
 
 ranking_tabla <- ranking_tabla %>% select(NAME_LATN,Ev_PPC,Ev_Paro,Ev_PF,Ev_PPA,Ev_DP,UE,Ranking)
@@ -937,6 +938,9 @@ datatable(ranking_tabla)
 ```
 
 ```{r}
+#| echo: false
+#| warning: false
+
 map %>% 
   left_join(ranking %>% select(geo,UE)) %>% 
   
