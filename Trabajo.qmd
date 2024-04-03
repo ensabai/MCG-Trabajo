@@ -14,7 +14,7 @@ editor: source
 rm(list=ls())
 # Especificamos las librerías necesarias en esta lista
 
-packages = c("eurostat","tidyverse",'ggplot2','lubridate','stringr','ggthemes',"DT")
+packages = c("eurostat","tidyverse",'ggplot2','lubridate','stringr','ggthemes',"DT","ggrepel")
 
 #use this function to check if each package is on the local machine
 #if a package is installed, it will be loaded
@@ -51,7 +51,6 @@ map$geo[map$geo == "EU27_2020"] <- "EU27"
 
 indicador <- data.frame(geo = c(miembros_UE27,"EU27"))
 ```
-
 
 # Introducción
 
@@ -468,7 +467,6 @@ indicador <- left_join(indicador,dif_Paro_A %>% select(geo,dif_por))
 names(indicador)[3] <- "Ev_Paro"
 ```
 
-
 ## Presión Fiscal
 
 ```{r}
@@ -869,69 +867,91 @@ norma <- apply(indicador[,2:6], 2, function(x){sqrt(sum(x^2))})
 
 pesos <- rep(0.2,5)
 
-indicar_norma <- as.data.frame(t(apply(indicador[,2:6], 1, function(x){x * pesos / norma})))
-indicar_norma <- cbind(geo = c(miembros_UE27,"EU27"),indicar_norma)
+indicador_norma <- as.data.frame(t(apply(indicador[,2:6], 1, function(x){x * pesos / norma})))
+indicador_norma <- cbind(geo = c(miembros_UE27,"EU27"),indicador_norma)
 
-ideal <- c(max(indicar_norma$Ev_PPC_real),min(indicar_norma$Ev_Paro),min(indicar_norma$Ev_PF),max(indicar_norma$Ev_PPA),min(indicar_norma$Ev_DP))
-antiideal <- c(min(indicar_norma$Ev_PPC_real),max(indicar_norma$Ev_Paro),max(indicar_norma$Ev_PF),min(indicar_norma$Ev_PPA),max(indicar_norma$Ev_DP))
+ideal <- c(max(indicador_norma$Ev_PPC_real),min(indicador_norma$Ev_Paro),min(indicador_norma$Ev_PF),max(indicador_norma$Ev_PPA),min(indicador_norma$Ev_DP))
+antiideal <- c(min(indicador_norma$Ev_PPC_real),max(indicador_norma$Ev_Paro),max(indicador_norma$Ev_PF),min(indicador_norma$Ev_PPA),max(indicador_norma$Ev_DP))
 
-indicar_norma$DM <- apply(indicador[,2:6], 1, function(x){sqrt(sum((x-ideal)^2))})
-indicar_norma$Dm <- apply(indicador[,2:6], 1, function(x){sqrt(sum((x-antiideal)^2))})
+indicador_norma$Di <- apply(indicador_norma[,2:6], 1, function(x){sqrt(sum((x-ideal)^2))})
+indicador_norma$Da <- apply(indicador_norma[,2:6], 1, function(x){sqrt(sum((x-antiideal)^2))})
 
-indicar_norma$R <- indicar_norma$Dm / (indicar_norma$Dm + indicar_norma$DM)
+indicador_norma$R <- indicador_norma$Da / (indicador_norma$Da + indicador_norma$Di)
 
-indicar_norma$UE <- indicar_norma$R * 100 / indicar_norma$R[indicar_norma$geo == "EU27"]
+indicador_norma$UE <- indicador_norma$R * 100 / indicador_norma$R[indicador_norma$geo == "EU27"]
 
-ranking <- indicar_norma %>%
+ranking <- indicador_norma %>%
   filter(geo != "EU27") %>% 
   select(geo,Ev_PPC_real) %>% 
   arrange(desc(Ev_PPC_real)) %>%
   mutate(`Ev_PPC` = 1:27) %>% 
   select(-Ev_PPC_real)
 
-ranking <- indicar_norma %>%
+ranking <- indicador_norma %>%
   filter(geo != "EU27") %>% 
   select(geo,Ev_Paro) %>% 
   arrange(Ev_Paro) %>%
   mutate(`Ev_Paro` = 1:27) %>% 
   right_join(ranking)
 
-ranking <- indicar_norma %>%
+ranking <- indicador_norma %>%
   filter(geo != "EU27") %>% 
   select(geo,Ev_PF) %>% 
   arrange(Ev_PF) %>%
   mutate(`Ev_PF` = 1:27) %>% 
   right_join(ranking)
 
-ranking <- indicar_norma %>%
+ranking <- indicador_norma %>%
   filter(geo != "EU27") %>% 
   select(geo,Ev_PPA) %>% 
   arrange(desc(Ev_PPA)) %>%
   mutate(`Ev_PPA` = 1:27) %>% 
   right_join(ranking)
 
-ranking <- indicar_norma %>%
+ranking <- indicador_norma %>%
   filter(geo != "EU27") %>% 
   select(geo,Ev_DP) %>% 
   arrange(Ev_DP) %>%
   mutate(`Ev_DP` = 1:27) %>% 
   right_join(ranking)
 
-ranking <- indicar_norma %>%
+ranking <- indicador_norma %>%
   filter(geo != "EU27") %>% 
-  select(geo,R) %>% 
-  arrange(desc(R)) %>%
-  mutate(`R` = 1:27) %>% 
+  select(geo,UE) %>% 
+  arrange(desc(UE)) %>%
+  mutate(`Ranking` = 1:27,
+         UE = round(UE,1)) %>% 
   right_join(ranking)
 ```
 
 ```{r}
 #| echo: false
 #| warning: false
+ranking_tabla <- ranking %>% left_join(map %>% select(NAME_LATN,geo))
 
-datatable(ranking)
+ranking_tabla <- ranking_tabla %>% select(NAME_LATN,Ev_PPC,Ev_Paro,Ev_PF,Ev_PPA,Ev_DP,UE,Ranking)
+
+names(ranking_tabla) <- c("Países UE-27","Evolución PIB","Evolución Empleo","Presión Fiscal","Poder adquisitivo","Deuda Pública","UE=100","Ranking")
+
+datatable(ranking_tabla)
 ```
 
+```{r}
+map %>% 
+  left_join(ranking %>% select(geo,UE)) %>% 
+  
+  ggplot() +
+  
+  geom_sf(aes(geometry = geometry, fill = UE)) +
+  
+  geom_sf_label(aes(label = UE), size = 2.5) +
+  
+  coord_sf(xlim = c(-25,45), ylim = c(30,70)) +
+  
+  scale_fill_viridis_c(option = "magma") +
+  
+  theme_minimal()
+```
 
 # Conclusiones
 
@@ -1123,7 +1143,6 @@ dif_GP_A %>%
         legend.position = "none",
         panel.grid.major.x = element_blank())
 ```
-
 
 ### Esfuerzo Fiscal
 
