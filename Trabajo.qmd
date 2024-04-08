@@ -120,21 +120,6 @@ PPC_Q <- PPC_Q %>% mutate(PPC = PIB / pob)
 ```
 
 ```{r}
-#| echo: false
-#| warning: false
-
-PPC_Q %>%
-  
-  filter(geo %in% c("ES","DE","FR","EE")) %>%
-  
-  ggplot(aes(x = time, y = PPC, color = geo)) +
-  
-  geom_line() +
-  
-  theme_minimal()
-```
-
-```{r}
 #| include: false
 
 PPC_Q <- right_join(PPC_Q,select(IPC_2005_Q,-anyo), by = c("geo","time"))
@@ -142,21 +127,6 @@ PPC_Q <- right_join(PPC_Q,select(IPC_2005_Q,-anyo), by = c("geo","time"))
 PPC_Q <- PPC_Q %>% 
   mutate(PPC_real = PPC * 100 / IPC) %>% 
   select(geo,time,anyo,PPC,PPC_real)
-```
-
-```{r}
-#| echo: false
-#| warning: false
-
-PPC_Q %>%
-  
-  filter(geo %in% c("ES","DE","FR","CY","PT","EE") & !is.na(PPC_real)) %>%
-  
-  ggplot(aes(x = time, y = PPC_real, color = geo)) +
-  
-  geom_line() +
-  
-  theme_minimal()
 ```
 
 ```{r}
