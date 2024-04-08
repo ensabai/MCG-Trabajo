@@ -155,17 +155,52 @@ PPC_A
 
 PPC_A %>%
   
-  filter(anyo == 2022) %>%
+  filter(anyo == 2023) %>%
   
   mutate(color = case_when(geo == "ES" ~ "ES",
                            geo == "EU27" ~ "EU27",
                            geo != "ES" & geo != "EU27" ~ "Otros")) %>%
   
-  ggplot(aes(x = PPC_real, y = reorder(geo,PPC_real))) +
+  ggplot(aes(x = PPC / 1000, y = reorder(geo,PPC / 1000))) +
   
   geom_col(width = 0.4, aes(fill = color)) +
   
-  labs(title = "PIB per Capita", subtitle = "Índice de Precios 2005=100, euro", caption = "Fuente: Eurostat") +
+  geom_text(aes(label = round(PPC / 1000,2), x = PPC / 1000 + 8), col = "#646363", size = 2) +
+  
+  labs(title = "PIB per Cápita (en miles de €)", subtitle = "Año: 2023", caption = "Fuente: Eurostat") +
+  
+  scale_fill_manual(values = c("#d8d8d7","#c01717","#2873b7"),breaks = c("Otros","ES","EU27")) +
+  
+  theme_minimal() +
+  
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        legend.position = "none",
+        panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_line(linetype = 8),
+        panel.grid.minor.x = element_line(linetype = 8),
+        aspect.ratio = 4/3)
+```
+
+```{r}
+#| echo: false
+#| warning: false
+
+PPC_A %>%
+  
+  filter(anyo == 2023) %>%
+  
+  mutate(color = case_when(geo == "ES" ~ "ES",
+                           geo == "EU27" ~ "EU27",
+                           geo != "ES" & geo != "EU27" ~ "Otros")) %>%
+  
+  ggplot(aes(x = PPC_real / 1000, y = reorder(geo,PPC_real / 1000))) +
+  
+  geom_col(width = 0.4, aes(fill = color)) +
+  
+  geom_text(aes(label = round(PPC_real / 1000,2), x = PPC_real / 1000 + 5), col = "#646363", size = 2) +
+  
+  labs(title = "PIB per Cápita real (en miles de €)", subtitle = "Índice de Precios 2005=100\nAño: 2023", caption = "Fuente: Eurostat") +
   
   scale_fill_manual(values = c("#d8d8d7","#c01717","#2873b7"),breaks = c("Otros","ES","EU27")) +
   
@@ -188,13 +223,25 @@ left_join(map,filter(PPC_A, anyo == 2023)) %>%
   
   ggplot() +
   
-  geom_sf(aes(geometry = geometry, fill = PPC_real)) +
+  geom_sf(aes(geometry = geometry, fill = PPC_real / 1000)) +
+  
+  geom_sf_label(aes(label = round(PPC_real / 1000,2)), size = 2.5) +
   
   coord_sf(xlim = c(-25,45), ylim = c(30,70)) +
   
   scale_fill_viridis_c(option = "magma") +
   
-  theme_minimal()
+  labs(title = "PIB per Capita (en miles de €)", subtitle = "Índice de Precios 2005=100\nAño: 2023", caption = "Fuente: Eurostat") +
+  
+  theme_minimal() +
+  
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        legend.position = c(0.5,0.05),
+        legend.direction = "horizontal",
+        legend.title = element_blank())
 ```
 
 ### Variación PPC (2018-2023)
@@ -341,7 +388,7 @@ Paro_A %>%
   
   geom_text(aes(label = paste(round(Tasa_Paro,2),"%"), x = Tasa_Paro + 1), col = "#646363", size = 2) +
   
-  labs(title = "Tasa de Paro", subtitle = "% sobre la población activa", caption = "Fuente: Eurostat") +
+  labs(title = "Tasa de Paro (% sobre la población activa)", subtitle = "Año: 2023", caption = "Fuente: Eurostat") +
   
   scale_fill_manual(values = c("#d8d8d7","#c01717","#2873b7"),breaks = c("0","1","2")) +
   
@@ -372,7 +419,17 @@ left_join(map,filter(Paro_A, anyo == 2023)) %>%
   
   scale_fill_viridis_c(option = "magma", direction = -1) +
   
-  theme_minimal()
+  labs(title = "Tasa de Paro (% sobre la población activa)", subtitle = "Año: 2023", caption = "Fuente: Eurostat") +
+  
+  theme_minimal() +
+  
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        legend.position = c(0.5,0.05),
+        legend.direction = "horizontal",
+        legend.title = element_blank())
 ```
 
 ### Variación Tasa de paro (2018-2023)
@@ -462,13 +519,23 @@ left_join(map,filter(PF, anyo == 2022)) %>%
   
   geom_sf(aes(geometry = geometry, fill = PF_GDP)) +
   
-  geom_sf_text(aes(label = PF_GDP), color = "white", size = 2.5) +
+  geom_sf_label(aes(label = PF_GDP), size = 2.5) +
   
   coord_sf(xlim = c(-25,45), ylim = c(30,70)) +
   
   scale_fill_viridis_c(option = "magma", direction = -1) +
   
-  theme_minimal()
+  labs(title = "Presión Fiscal (% sobre el PIB)", subtitle = "Año: 2022", caption = "Fuente: EuroStat") +
+  
+  theme_minimal() +
+  
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        legend.position = c(0.5,0.05),
+        legend.direction = "horizontal",
+        legend.title = element_blank())
 ```
 
 ```{r}
@@ -491,7 +558,7 @@ PF %>%
   
   geom_text(aes(label = paste(round(PF_GDP),"%"), x = PF_GDP + 3), col = "#646363", size = 2) +
   
-  labs(title = "Presión Fiscal", subtitle = paste("Año:", anyo3), caption = "Fuente: Eurostat") +
+  labs(title = "Presión Fiscal (% sobre el PIB)", subtitle = paste("Año:", anyo3), caption = "Fuente: Eurostat") +
   
   scale_fill_manual(values = c("#d8d8d7","#c01717","#2873b7"),breaks = c("0","1","2")) +
   
@@ -634,7 +701,17 @@ left_join(map,filter(PIB_PPA, anyo == 2023)) %>%
   
   scale_fill_viridis_c(option = "magma") +
   
-  theme_minimal()
+  labs(title = "Poder adquisitivo de las familias", subtitle = "Año: 2023", caption = "Fuente: Eurostat") +
+  
+  theme_minimal() +
+  
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        legend.position = c(0.5,0.05),
+        legend.direction = "horizontal",
+        legend.title = element_blank())
 ```
 
 ### Variación poder adquisitivo de las familias (PPA) (2018-2023)
@@ -732,7 +809,7 @@ Deuda_PIB %>%
   
   geom_text(aes(label = paste(Deuda_PIB,"%"), x = Deuda_PIB + 15), col = "#646363", size = 2) +
   
-  labs(title = "Deuda Pública", subtitle = "% sobre el PIB", caption = "Fuente: Eurostat") +
+  labs(title = "Deuda Pública (% sobre el PIB)", subtitle = "Año: 2022", caption = "Fuente: Eurostat") +
   
   scale_fill_manual(values = c("#d8d8d7","#c01717","#2873b7"),breaks = c("0","1","2")) +
   
@@ -763,7 +840,17 @@ left_join(map,filter(Deuda_PIB, anyo == 2022)) %>%
   
   scale_fill_viridis_c(option = "magma", direction = -1) +
   
-  theme_minimal()
+  labs(title = "Deuda Pública (% sobre el PIB)", subtitle = "Año: 2022", caption = "Fuente: Eurostat") +
+  
+  theme_minimal() +
+  
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        legend.position = c(0.5,0.05),
+        legend.direction = "horizontal",
+        legend.title = element_blank())
 ```
 
 ### Variación Deuda Pública (2018-2022)
@@ -911,7 +998,8 @@ datatable(ranking_tabla)
 #| echo: false
 #| warning: false
 
-map %>% 
+map %>%
+  
   left_join(ranking %>% select(geo,UE)) %>% 
   
   ggplot() +
@@ -924,7 +1012,17 @@ map %>%
   
   scale_fill_viridis_c(option = "magma") +
   
-  theme_minimal()
+  labs(title = "Índice de Desarrollo Económico (2018-2023)") +
+  
+  theme_minimal() +
+  
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        legend.position = c(0.5,0.05),
+        legend.direction = "horizontal",
+        legend.title = element_blank())
 ```
 
 # Conclusiones
@@ -957,16 +1055,27 @@ gini_anyo <- left_join(map,filter(gini, year == 2022),by = "geo")
 
 gini_anyo %>%
   
-  mutate(gini_cut = eurostat::cut_to_classes(gini,n = 5)) %>% 
-  
   ggplot() +
-  geom_sf(aes(geometry = geometry, fill = gini_cut)) +
+  
+  geom_sf(aes(geometry = geometry, fill = gini)) +
   
   coord_sf(xlim = c(-25,45), ylim = c(30,70)) +
   
-  scale_fill_viridis_d(option = "magma", direction = -1) +
+  geom_sf_label(aes(label = gini), size = 2.5) +
   
-  theme_minimal()
+  scale_fill_viridis_c(option = "magma", direction = -1) +
+  
+  labs(title = "Índice de Gini", subtitle = "Año: 2022", caption = "Fuente: Eurostat") +
+  
+  theme_minimal() +
+  
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        legend.position = c(0.5,0.05),
+        legend.direction = "horizontal",
+        legend.title = element_blank())
 ```
 
 ```{r}
@@ -1009,7 +1118,7 @@ gini_anyo1 %>%
   
   geom_point(data = gini_anyo2, aes(x = gini, color = as.character(anyo2)), size = 3) +
   
-  labs(x = "Índice Gini", y = "", title = "Índice de Gini", color = "Leyenda") +
+  labs(title = "Índice de Gini (2018-2022)", x = "Índice Gini", y = "", color = "Leyenda") +
   
   scale_color_manual(values = c("#797979","#2e9fd9","#bcb7b0")) +
   
@@ -1039,7 +1148,7 @@ Gasto_PIB %>%
   ggplot(aes(x = Gasto_PIB, y = reorder(geo,Gasto_PIB))) + 
   geom_col(width = 0.4, aes(fill = color)) +
   geom_text(aes(label = paste(Gasto_PIB,"%"), x = Gasto_PIB + 5), col = "#646363", size = 2) +
-  labs(title = "Gasto Público", subtitle = "% sobre el PIB", caption = "Fuente: Eurostat") +
+  labs(title = "Gasto Público (% sobre el PIB)", subtitle = "Año: 2022", caption = "Fuente: Eurostat") +
   scale_fill_manual(values = c("#d8d8d7","#c01717","#2873b7"),breaks = c("0","1","2")) +
   theme_minimal() +
   theme(axis.title.x = element_blank(),
@@ -1056,12 +1165,28 @@ Gasto_PIB %>%
 #| warning: false
 
 left_join(map,filter(Gasto_PIB, anyo == 2022)) %>%
+  
   ggplot() +
+  
   geom_sf(aes(geometry = geometry, fill = Gasto_PIB)) +
+  
   geom_sf_label(aes(label = Gasto_PIB), size = 2.5) +
+  
+  labs(title = "Gasto Público (% sobre el PIB)", subtitle = "Año: 2022", caption = "Fuente: Eurostat") +
+  
   coord_sf(xlim = c(-25,45), ylim = c(30,70)) +
+  
   scale_fill_viridis_c(option = "magma", direction = -1) +
-  theme_minimal()
+  
+  theme_minimal() +
+  
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        legend.position = c(0.5,0.05),
+        legend.direction = "horizontal",
+        legend.title = element_blank())
 ```
 
 #### Variación Gasto Público (2018-2022)
@@ -1132,12 +1257,29 @@ EF <- EF %>% mutate(EF = PF_GDP / PPC * 100) %>% select(geo,anyo,EF)
 #| warning: false
 
 left_join(map,filter(EF, anyo == 2022)) %>%
+  
   ggplot() +
+  
   geom_sf(aes(geometry = geometry, fill = EF)) +
+  
   geom_sf_label(aes(label = round(EF,2)), size = 2.5) +
+  
   coord_sf(xlim = c(-25,45), ylim = c(30,70)) +
+  
+  labs(title = "Esfuezo Fiscal", subtitle = "Año: 2022", caption = "Fuente: Eurostat") +
+  
   scale_fill_viridis_c(option = "magma", direction = -1) +
-  theme_minimal()
+  
+  theme_minimal() +
+  
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        legend.position = c(0.5,0.05),
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        legend.text = element_text(angle = 315))
 ```
 
 ```{r}
