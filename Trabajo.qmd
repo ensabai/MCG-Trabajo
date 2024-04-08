@@ -1,5 +1,5 @@
 ---
-title: "Trabajo Decente y Crecimiento Económico"
+title: "Desarrollo Económico en la Eurozona"
 author: "Sofia Melcarne, Carlos Gila y Enrique Sayas"
 format: 
   html:
