@@ -1,11 +1,15 @@
 ---
-title: "Desarrollo Económico en la Eurozona"
+title: "Indicador de Desarrollo Económico (2018-2023)"
 author: "Sofia Melcarne, Carlos Gila y Enrique Sayas"
 format: 
   html:
     toc: true
     toc-title: Índice
     toc-location: right
+  pdf:
+    toc: true
+    number-sections: true
+    colorlinks: true
 editor: source
 ---
 
@@ -57,6 +61,30 @@ indicador <- data.frame(geo = c(miembros_UE27,"EU27"))
 # Planteamiento del problema
 
 # Descriptivo
+
+El Indicador de Desarrollo Económico (2018-2023) tiene como objetivo mostrar la distancia de los países de la Unión Europea respecto al peor caso de desarrollo económico. En este caso, se ha establecido la media europea como base para el diseño del ranking (EU27 = 100).
+
+Para la elaboración del indicador se ha seleccionado cinco variables económicas clave:
+
+-   Evolución del PIB per Capita deflactado respecto al año 2005.
+-   Evolución de la tasa de paro
+-   Evolución de la presión fiscal.
+-   Evolución del poder adquisitivo de las familias respecto a la media europea.
+-   Evolución de la deuda pública.
+
+Para ello, han sido utilizados los últimos datos disponibles en Eurostat:
+
+| Datos                            | Eurostat       |
+|----------------------------------|----------------|
+| PIB                              | namq_10_gdp    |
+| Población                        | demo_pjan      |
+| Deflactor                        | namq_10_gdp    |
+| Tasa de Paro                     | une_rt_m       |
+| Presión Fiscal                   | gov_10a_taxag  |
+| Poder Aquisitivo de las Familias | tec00114       |
+| Deuda Pública                    | gov_10dd_edpt1 |
+
+No todas las variables serán igual de relevantes a la hora de calcular el indicador. Esto se debe a que en la variable Tasa de Paro se desconoce el número de fijos discontinuos en España, lo que puede llevar a una distorsión en la evolución de la tasa de desempleo entre 2018 y 2023.
 
 ## PIB per Capita
 
@@ -148,6 +176,8 @@ PPC_A <- PPC_Q %>%
 
 PPC_A
 ```
+
+
 
 ```{r}
 #| echo: false
@@ -922,7 +952,7 @@ names(indicador)[6] <- "Ev_DP"
 
 norma <- apply(indicador[,2:6], 2, function(x){sqrt(sum(x^2))})
 
-pesos <- rep(0.2,5)
+pesos <- c(0.2125,0.15,rep(0.2125,3))
 
 indicador_norma <- as.data.frame(t(apply(indicador[,2:6], 1, function(x){x * pesos / norma})))
 indicador_norma <- cbind(geo = c(miembros_UE27,"EU27"),indicador_norma)
@@ -1012,7 +1042,7 @@ map %>%
   
   scale_fill_viridis_c(option = "magma") +
   
-  labs(title = "Índice de Desarrollo Económico (2018-2023)") +
+  labs(title = "Indicador de Desarrollo Económico (2018-2023)") +
   
   theme_minimal() +
   

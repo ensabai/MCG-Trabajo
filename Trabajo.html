@@ -8,7 +8,7 @@
 
 <meta name="author" content="Sofia Melcarne, Carlos Gila y Enrique Sayas">
 
-<title>Desarrollo Económico en la Eurozona</title>
+<title>Indicador de Desarrollo Económico (2018-2023)</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -84,13 +84,13 @@ ul.task-list li input[type="checkbox"] {
   <li><a href="#resultados" id="toc-resultados" class="nav-link" data-scroll-target="#resultados">Resultados</a></li>
   <li><a href="#conclusiones" id="toc-conclusiones" class="nav-link" data-scroll-target="#conclusiones">Conclusiones</a></li>
   </ul>
-</nav>
+<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="Trabajo.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></nav>
 </div>
 <main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Desarrollo Económico en la Eurozona</h1>
+<h1 class="title">Indicador de Desarrollo Económico (2018-2023)</h1>
 </div>
 
 
@@ -119,6 +119,55 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="descriptivo" class="level1">
 <h1>Descriptivo</h1>
+<p>El Indicador de Desarrollo Económico (2018-2023) tiene como objetivo mostrar la distancia de los países de la Unión Europea respecto al peor caso de desarrollo económico. En este caso, se ha establecido la media europea como base para el diseño del ranking (EU27 = 100).</p>
+<p>Para la elaboración del indicador se ha seleccionado cinco variables económicas clave:</p>
+<ul>
+<li>Evolución del PIB per Capita deflactado respecto al año 2005.</li>
+<li>Evolución de la tasa de paro</li>
+<li>Evolución de la presión fiscal.</li>
+<li>Evolución del poder adquisitivo de las familias respecto a la media europea.</li>
+<li>Evolución de la deuda pública.</li>
+</ul>
+<p>Para ello, han sido utilizados los últimos datos disponibles en Eurostat:</p>
+<table class="table">
+<thead>
+<tr class="header">
+<th>Datos</th>
+<th>Eurostat</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>PIB</td>
+<td>namq_10_gdp</td>
+</tr>
+<tr class="even">
+<td>Población</td>
+<td>demo_pjan</td>
+</tr>
+<tr class="odd">
+<td>Deflactor</td>
+<td>namq_10_gdp</td>
+</tr>
+<tr class="even">
+<td>Tasa de Paro</td>
+<td>une_rt_m</td>
+</tr>
+<tr class="odd">
+<td>Presión Fiscal</td>
+<td>gov_10a_taxag</td>
+</tr>
+<tr class="even">
+<td>Poder Aquisitivo de las Familias</td>
+<td>tec00114</td>
+</tr>
+<tr class="odd">
+<td>Deuda Pública</td>
+<td>gov_10dd_edpt1</td>
+</tr>
+</tbody>
+</table>
+<p>No todas las variables serán igual de relevantes a la hora de calcular el indicador. Esto se debe a que en la variable Tasa de Paro se desconoce el número de fijos discontinuos en España, lo que puede llevar a una distorsión en la evolución de la tasa de desempleo entre 2018 y 2023.</p>
 <section id="pib-per-capita" class="level2">
 <h2 class="anchored" data-anchor-id="pib-per-capita">PIB per Capita</h2>
 <div class="cell">
@@ -240,8 +289,8 @@ ul.task-list li input[type="checkbox"] {
 <div class="cell">
 <div class="cell-output-display">
 
-<div class="datatables html-widget html-fill-item" id="htmlwidget-fe454fca0ea786a05f2c" style="width:100%;height:auto;"></div>
-<script type="application/json" data-for="htmlwidget-fe454fca0ea786a05f2c">{"x":{"filter":"none","vertical":false,"data":[["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27"],["HRVATSKA","IRELAND","POLSKA","BULGARIA","ELLADA","SLOVENIJA","MALTA","DANMARK","NEDERLAND","MAGYARORSZÁG","LATVIJA","PORTUGAL","BELGIQUE-BELGIË","SVERIGE","ITALIA","ROMÂNIA","KYPROS","FRANCE","SLOVENSKO","LIETUVA","LUXEMBOURG","ÖSTERREICH","SUOMI / FINLAND","DEUTSCHLAND","ESPAÑA","ČESKÁ REPUBLIKA","EESTI"],[1,2,4,3,9,12,10,13,18,7,11,15,17,19,16,5,6,21,14,8,25,27,23,26,22,24,20],[9,8,5,2,1,3,10,21,6,24,13,15,16,26,4,22,7,12,14,23,18,20,19,17,11,25,27],[6,1,10,24,15,16,4,2,12,3,9,21,7,5,20,23,27,13,22,25,8,18,17,19,26,11,14],[3,5,4,1,14,9,13,17,15,7,12,8,18,22,16,2,10,24,11,6,27,25,23,26,21,19,20],[7,1,9,10,6,11,24,4,8,16,17,5,12,2,13,25,3,21,22,19,23,14,20,15,18,26,27],[144.4,143.7,130.8,124.3,114.3,110.6,109.1,108.7,107.8,107.6,105.2,103.3,102.1,100.1,98.90000000000001,95.8,95.2,93.3,92.8,88.3,87.40000000000001,87,86,83.90000000000001,80.3,78.8,47.4],[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>Países UE-27<\/th>\n      <th>Evolución PIB<\/th>\n      <th>Evolución Empleo<\/th>\n      <th>Presión Fiscal<\/th>\n      <th>Poder adquisitivo<\/th>\n      <th>Deuda Pública<\/th>\n      <th>UE=100<\/th>\n      <th>Ranking<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"columnDefs":[{"className":"dt-right","targets":[2,3,4,5,6,7,8]},{"orderable":false,"targets":0},{"name":" ","targets":0},{"name":"Países UE-27","targets":1},{"name":"Evolución PIB","targets":2},{"name":"Evolución Empleo","targets":3},{"name":"Presión Fiscal","targets":4},{"name":"Poder adquisitivo","targets":5},{"name":"Deuda Pública","targets":6},{"name":"UE=100","targets":7},{"name":"Ranking","targets":8}],"order":[],"autoWidth":false,"orderClasses":false}},"evals":[],"jsHooks":[]}</script>
+<div class="datatables html-widget html-fill-item" id="htmlwidget-8364f98de1c267584438" style="width:100%;height:auto;"></div>
+<script type="application/json" data-for="htmlwidget-8364f98de1c267584438">{"x":{"filter":"none","vertical":false,"data":[["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27"],["HRVATSKA","IRELAND","POLSKA","BULGARIA","MAGYARORSZÁG","DANMARK","ELLADA","SLOVENIJA","MALTA","NEDERLAND","LATVIJA","PORTUGAL","SVERIGE","BELGIQUE-BELGIË","ROMÂNIA","ITALIA","KYPROS","SLOVENSKO","FRANCE","LIETUVA","ÖSTERREICH","LUXEMBOURG","SUOMI / FINLAND","DEUTSCHLAND","ČESKÁ REPUBLIKA","ESPAÑA","EESTI"],[1,2,4,3,7,13,9,12,10,18,11,15,19,17,5,16,6,14,21,8,27,25,23,26,24,22,20],[9,8,5,2,24,21,1,3,10,6,13,15,26,16,22,4,7,14,12,23,20,18,19,17,25,11,27],[6,1,10,24,3,2,15,16,4,12,9,21,5,7,23,20,27,22,13,25,18,8,17,19,11,26,14],[3,5,4,1,7,17,14,9,13,15,12,8,22,18,2,16,10,11,24,6,25,27,23,26,19,21,20],[7,1,9,10,16,4,6,11,24,8,17,5,2,12,25,13,3,22,21,19,14,23,20,15,26,18,27],[146.4,145.3,131.1,124,114.2,112.1,111.9,109.6,109.1,107,106.5,105.2,105.2,104,99.90000000000001,97.40000000000001,93.90000000000001,93.7,92.90000000000001,92.3,88.8,88.5,87.59999999999999,84.7,82.7,78.90000000000001,49.2],[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>Países UE-27<\/th>\n      <th>Evolución PIB<\/th>\n      <th>Evolución Empleo<\/th>\n      <th>Presión Fiscal<\/th>\n      <th>Poder adquisitivo<\/th>\n      <th>Deuda Pública<\/th>\n      <th>UE=100<\/th>\n      <th>Ranking<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"columnDefs":[{"className":"dt-right","targets":[2,3,4,5,6,7,8]},{"orderable":false,"targets":0},{"name":" ","targets":0},{"name":"Países UE-27","targets":1},{"name":"Evolución PIB","targets":2},{"name":"Evolución Empleo","targets":3},{"name":"Presión Fiscal","targets":4},{"name":"Poder adquisitivo","targets":5},{"name":"Deuda Pública","targets":6},{"name":"UE=100","targets":7},{"name":"Ranking","targets":8}],"order":[],"autoWidth":false,"orderClasses":false}},"evals":[],"jsHooks":[]}</script>
 </div>
 </div>
 <div class="cell">
