@@ -18,7 +18,7 @@ editor: source
 rm(list=ls())
 # Especificamos las librerías necesarias en esta lista
 
-packages = c("eurostat","tidyverse",'ggplot2','lubridate','stringr','ggthemes',"DT","ggrepel")
+packages = c("eurostat","tidyverse","ggplot2","lubridate","stringr","DT","kableExtra")
 
 #use this function to check if each package is on the local machine
 #if a package is installed, it will be loaded
@@ -515,7 +515,7 @@ names(indicador)[5] <- "Ev_PPA"
 
 ```{r}
 #| include: false
-#| 
+
 Deuda_PIB <- get_eurostat("gov_10dd_edpt1", filters = list(na_item = "GD", sector = "S13", unit = "PC_GDP")) %>% 
   filter(!is.na(values) & geo %in% c(miembros_UE27,"EU27_2020")) %>% 
   mutate(anyo = year(time)) %>% 
@@ -652,18 +652,33 @@ ranking <- indicador_norma %>%
   right_join(ranking)
 ```
 
+::: {.content-visible when-format="html"}
 ```{r}
 #| echo: false
 #| warning: false
 
 ranking_tabla <- ranking %>% left_join(map %>% select(NAME_LATN,geo))
-
+ 
 ranking_tabla <- ranking_tabla %>% select(NAME_LATN,Ev_PPC,Ev_Paro,Ev_PF,Ev_PPA,Ev_DP,UE,Ranking)
 
-names(ranking_tabla) <- c("Países UE-27","Evolución PIB","Evolución Empleo","Presión Fiscal","Poder adquisitivo","Deuda Pública","UE=100","Ranking")
+names(ranking_tabla) <- c("Países UE-27","Evolución PIB","Evolución Empleo","Presión Fiscal","Poder adquisitivo","Deuda Pública","IDE\nUE=100","Ranking")
 
 datatable(ranking_tabla)
 ```
+:::
+
+::: {.content-visible when-format="pdf"}
+```{r}
+#| echo: false
+#| warning: false
+
+names(ranking_tabla) <- c("Países UE-27","Evolución PIB","Evolución Empleo","Presión Fiscal","Poder adquisitivo","Deuda Pública","UE=100","Ranking")
+
+ranking_tabla %>%
+  kable(caption = "Ranking Indicador de Desarrollo Económico (2018-2023)") %>%
+  kable_classic()
+```
+:::
 
 ```{r}
 #| echo: false
