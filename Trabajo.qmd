@@ -739,7 +739,6 @@ ranking <- indicador_norma %>%
   right_join(ranking)
 ```
 
-::: {.content-visible when-format="html"}
 ```{r}
 #| echo: false
 #| warning: false
@@ -752,9 +751,7 @@ names(ranking_tabla) <- c("Países UE-27","Evolución PIB per Capita","Evolució
 
 datatable(ranking_tabla)
 ```
-:::
 
-::: {.content-visible when-format="pdf"}
 ```{r}
 #| echo: false
 #| warning: false
@@ -762,10 +759,9 @@ datatable(ranking_tabla)
 names(ranking_tabla) <- c("Países UE-27","Evolución PIB per Capita","Evolución Tasa de Paro","Evolución Presión Fiscal","Evolución Poder Adquisitivo","Evolución Deuda Pública","UE=100","Ranking")
 
 ranking_tabla %>%
-  kable(caption = "Ranking Indicador de Desarrollo Económico (2018-2023)") %>%
+  kable(caption = "Indicador de Desarrollo Económico (2018-2023)") %>%
   kable_classic()
 ```
-:::
 
 ```{r}
 #| echo: false
