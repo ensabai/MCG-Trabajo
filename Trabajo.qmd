@@ -37,7 +37,8 @@ search()
 ```{r}
 #| include: false
 
-miembros_UE27 <- c("BE","EL","LT","PT","BG","ES","LU","RO","CZ","FR","HU","SI","DK","HR","MT","SK","DE","IT","NL","FI","EE","CY","AT","SE","IE","LV","PL")
+miembros_UE27 <- data.frame(geo = c("BE","EL","LT","PT","BG","ES","LU","RO","CZ","FR","HU","SI","DK","HR","MT","SK","DE","IT","NL","FI","EE","CY","AT","SE","IE","LV","PL"),
+                            nombre = c("Bélgica","Grecia","Lituania","Portugal","Bulgaria","España","Luxemburgo","Rumanía","R. Checa","Francia","Hungría","Eslovenia","Dinamarca","Croacia","Malta","Eslovaquia","Alemania","Italia","Países Bajos","Finlandia","Estonia","Chipre","Austria","Suecia","Irlanda","Letonia","Polonia"))
 ```
 
 ```{r}
@@ -53,7 +54,7 @@ map$geo[map$geo == "EU27_2020"] <- "EU27"
 ```{r}
 #| include: false
 
-indicador <- data.frame(geo = c(miembros_UE27,"EU27"))
+indicador <- data.frame(geo = c(miembros_UE27$geo,"EU27"))
 ```
 
 # Introducción
@@ -86,7 +87,9 @@ Para ello, han sido utilizados los últimos datos disponibles en Eurostat:
 
 No todas las variables serán igual de relevantes a la hora de calcular el indicador. Esto se debe a que en la variable Tasa de Paro se desconoce el número de fijos discontinuos en España, lo que puede llevar a una distorsión en la evolución de la tasa de desempleo entre 2018 y 2023.
 
-## PIB per Capita
+## Variables
+
+### PIB per Capita
 
 ```{r}
 #| include: false
@@ -117,7 +120,7 @@ PIB_Q <- get_eurostat("namq_10_gdp", filters = list(na_item = "B1GQ", s_adj = "S
 names(PIB_Q)[3] <- "PIB"
 
 PIB_Q <- PIB_Q %>% 
-  filter(!is.na(PIB) & geo %in% c(miembros_UE27,"EU27_2020")) %>% 
+  filter(!is.na(PIB) & geo %in% c(miembros_UE27$geo,"EU27_2020")) %>% 
   mutate(anyo = year(time), PIB = PIB * 1000000)
 
 PIB_Q$geo[PIB_Q$geo == "EU27_2020"] <- "EU27"
@@ -132,7 +135,7 @@ IPC_2005_Q <- get_eurostat("namq_10_gdp", filters = list(na_item = "B1GQ", s_adj
 names(IPC_2005_Q)[3] <- "IPC"
 
 IPC_2005_Q <- IPC_2005_Q %>% 
-  filter(!is.na(IPC) & geo %in% c(miembros_UE27,"EU27_2020")) %>% 
+  filter(!is.na(IPC) & geo %in% c(miembros_UE27$geo,"EU27_2020")) %>% 
   mutate(anyo = year(time))
 
 IPC_2005_Q$geo[IPC_2005_Q$geo == "EU27_2020"] <- "EU27"
@@ -195,7 +198,7 @@ dif_PPC_EU <- dif_PPC_A %>%
   filter(geo == "EU27" & tipo == "PPC") %>%
   select(dif_por)
 
-dif_PPC_EU <- cbind(dif_PPC_EU,x = "FI")
+dif_PPC_EU <- cbind(dif_PPC_EU,x = "Finlandia")
 
 dif_PPC_A %>%
   
@@ -203,10 +206,12 @@ dif_PPC_A %>%
   
   filter(tipo == "PPC" & geo != "EU27") %>%
   
+  left_join(miembros_UE27) %>% 
+  
   mutate(texto = ifelse(dif_por == max(dif_por) | geo == "ES",dif_por,NA),
          color = ifelse(geo == "ES","ES","Otros")) %>%
   
-  ggplot(aes(x = reorder(geo,desc(dif_por)), y = dif_por)) +
+  ggplot(aes(x = reorder(nombre,desc(dif_por)), y = dif_por)) +
   
   geom_col(aes(fill = color), width = 0.6) +
   
@@ -216,7 +221,7 @@ dif_PPC_A %>%
   
   geom_text(data = dif_PPC_EU, aes(x = x, y = dif_por + 3, label = paste("EU27:", round(dif_por,1))), color = "#2873b7") +
   
-  labs(title = "Crecimiento (%) del PPC (2018-2023)") +
+  labs(title = "Crecimiento (%) del PIB per Cápita (2018-2023)") +
   
   scale_fill_manual(values = c("#d8d8d7","#c01717"),breaks = c("Otros","ES")) +
   
@@ -224,7 +229,7 @@ dif_PPC_A %>%
   
   theme_minimal() +
   
-  theme(axis.text.x = element_text(angle = 90, vjust = 0),
+  theme(axis.text.x = element_text(angle = 90, vjust = 0, hjust=0.95),
         axis.title.x = element_blank(),
         axis.title.y = element_blank(),
         legend.position = "none",
@@ -239,7 +244,7 @@ dif_PPC_EU_real <- dif_PPC_A %>%
   filter(geo == "EU27", tipo == "PPC_real") %>%
   select(dif_por)
 
-dif_PPC_EU_real <- cbind(dif_PPC_EU_real,x = "LU")
+dif_PPC_EU_real <- cbind(dif_PPC_EU_real,x = "Luxemburgo")
 
 dif_PPC_A %>%
   
@@ -247,10 +252,12 @@ dif_PPC_A %>%
   
   filter(tipo == "PPC_real" & geo != "EU27") %>%
   
+  left_join(miembros_UE27) %>%
+  
   mutate(texto = ifelse(dif_por == max(dif_por) | geo == "ES",dif_por,NA),
          color = ifelse(geo == "ES","ES","Otros")) %>%
   
-  ggplot(aes(x = reorder(geo,desc(dif_por)), y = dif_por)) +
+  ggplot(aes(x = reorder(nombre,desc(dif_por)), y = dif_por)) +
   
   geom_col(aes(fill = color), width = 0.6) +
   
@@ -260,7 +267,7 @@ dif_PPC_A %>%
   
   geom_text(data = dif_PPC_EU_real, aes(x = x, y = dif_por + 1, label = paste("EU27:", round(dif_por,1))), color = "#2873b7") +
   
-  labs(title = "Crecimiento real (%) del PPC (2018-2023)", subtitle = "Índice de Precios 2005=100, euro") +
+  labs(title = "Crecimiento real (%) del PIB per Cápita (2018-2023)", subtitle = "Índice de Precios 2005=100, euro") +
   
   scale_fill_manual(values = c("#d8d8d7","#c01717"),breaks = c("Otros","ES")) +
   
@@ -268,7 +275,7 @@ dif_PPC_A %>%
   
   theme_minimal() +
   
-  theme(axis.text.x = element_text(angle = 90, vjust = 0),
+  theme(axis.text.x = element_text(angle = 90, vjust = 0, hjust = 0.95),
         axis.title.x = element_blank(),
         axis.title.y = element_blank(),
         legend.position = "none",
@@ -282,13 +289,13 @@ indicador <- left_join(indicador,dif_PPC_A %>% filter(tipo == "PPC_real") %>% se
 names(indicador)[2] <- "Ev_PPC_real"
 ```
 
-## Tasa de Paro
+### Tasa de Paro
 
 ```{r}
 #| include: false
 
 Paro_M <- get_eurostat("une_rt_m", filters = list(age = "TOTAL", s_adj = "SA", sex = "T", unit = "PC_ACT")) %>% 
-  filter(!is.na(values) & geo %in% c(miembros_UE27,"EU27_2020")) %>% 
+  filter(!is.na(values) & geo %in% c(miembros_UE27$geo,"EU27_2020")) %>% 
   select(geo,time,values)
 
 names(Paro_M)[3] <- "Tasa_Paro"
@@ -318,7 +325,7 @@ dif_Paro_EU <- dif_Paro_A %>%
   filter(geo == "EU27") %>% 
   select(dif_por)
 
-dif_Paro_EU <- cbind(dif_Paro_EU,x = "CZ")
+dif_Paro_EU <- cbind(dif_Paro_EU,x = "R. Checa")
 
 dif_Paro_A %>%
   
@@ -326,10 +333,12 @@ dif_Paro_A %>%
   
   filter(geo != "EU27") %>% 
   
+  left_join(miembros_UE27) %>%
+  
   mutate(texto = ifelse(dif_por == min(dif_por) | geo == "ES",dif_por,NA),
          color = ifelse(geo == "ES","ES","Otros")) %>%
   
-  ggplot(aes(x = reorder(geo,dif_por), y = dif_por)) +
+  ggplot(aes(x = reorder(nombre,dif_por), y = dif_por)) +
   
   geom_col(aes(fill = color), width = 0.6) +
   
@@ -347,7 +356,7 @@ dif_Paro_A %>%
   
   theme_minimal() +
   
-  theme(axis.text.x = element_text(angle = 90, vjust = 0),
+  theme(axis.text.x = element_text(angle = 90, vjust = 0, hjust = 0.95),
         axis.title.x = element_blank(),
         axis.title.y = element_blank(),
         legend.position = "none",
@@ -361,12 +370,12 @@ indicador <- left_join(indicador,dif_Paro_A %>% select(geo,dif_por))
 names(indicador)[3] <- "Ev_Paro"
 ```
 
-## Presión Fiscal
+### Presión Fiscal
 
 ```{r}
 #| include: false
 PF <- get_eurostat("gov_10a_taxag", filters = list(na_item = "D2_D5_D91_D61_M_D995", sector = "S13_S212", unit = "PC_GDP")) %>% 
-  filter(!is.na(values) & geo %in% c(miembros_UE27,"EU27_2020")) %>%  
+  filter(!is.na(values) & geo %in% c(miembros_UE27$geo,"EU27_2020")) %>%  
   select(geo,time,values)
 
 PF$geo[PF$geo == "EU27_2020"] <- "EU27"
@@ -393,7 +402,7 @@ dif_PF_EU <- dif_PF_A %>%
   filter(geo == "EU27") %>% 
   select(dif_por)
 
-dif_PF_EU <- cbind(dif_PF_EU,x = "HU")
+dif_PF_EU <- cbind(dif_PF_EU,x = "Hungría")
 
 dif_PF_A %>%
   
@@ -401,10 +410,12 @@ dif_PF_A %>%
   
   filter(geo != "EU27") %>% 
   
+  left_join(miembros_UE27) %>%
+  
   mutate(texto = ifelse(dif_por == min(dif_por) | geo == "ES",dif_por,NA),
          color = ifelse(geo == "ES","ES","Otros")) %>%
   
-  ggplot(aes(x = reorder(geo,dif_por), y = dif_por)) +
+  ggplot(aes(x = reorder(nombre,dif_por), y = dif_por)) +
   
   geom_col(aes(fill = color), width = 0.6) +
   
@@ -422,7 +433,7 @@ dif_PF_A %>%
   
   theme_minimal() +
   
-  theme(axis.text.x = element_text(angle = 90, vjust = 0),
+  theme(axis.text.x = element_text(angle = 90, vjust = 0, hjust = 0.95),
         axis.title.x = element_blank(),
         axis.title.y = element_blank(),
         legend.position = "none",
@@ -436,13 +447,13 @@ indicador <- left_join(indicador,dif_PF_A %>% select(geo,dif_por))
 names(indicador)[4] <- "Ev_PF"
 ```
 
-## Evolución del poder adquisitivo de las familias (PPA)
+### Poder adquisitivo de las familias
 
 ```{r}
 #| include: false
 
 PIB_PPA <- get_eurostat("tec00114") %>% 
-  filter(!is.na(values) & geo %in% c(miembros_UE27,"EU27_2020")) %>% 
+  filter(!is.na(values) & geo %in% c(miembros_UE27$geo,"EU27_2020")) %>% 
   mutate(anyo = year(TIME_PERIOD)) %>% 
   select(geo,values,anyo)
 
@@ -468,7 +479,7 @@ dif_PPA_EU <- dif_PPA_A %>%
   filter(geo == "EU27") %>% 
   select(dif_por)
 
-dif_PPA_EU <- cbind(dif_PPA_EU,x = "DE")
+dif_PPA_EU <- cbind(dif_PPA_EU,x = "Dinamarca")
 
 dif_PPA_A %>%
   
@@ -476,10 +487,12 @@ dif_PPA_A %>%
   
   filter(geo != "EU27") %>%
   
+  left_join(miembros_UE27) %>%
+  
   mutate(texto = ifelse(dif_por == max(dif_por) | geo == "ES",dif_por,NA),
          color = ifelse(geo == "ES","ES","Otros")) %>%
   
-  ggplot(aes(x = reorder(geo,desc(dif_por)), y = dif_por)) +
+  ggplot(aes(x = reorder(nombre,desc(dif_por)), y = dif_por)) +
   
   geom_col(aes(fill = color), width = 0.6) +
   
@@ -497,7 +510,7 @@ dif_PPA_A %>%
   
   theme_minimal() +
   
-  theme(axis.text.x = element_text(angle = 90, vjust = 0),
+  theme(axis.text.x = element_text(angle = 90, vjust = 0, hjust = 0.95),
         axis.title.x = element_blank(),
         axis.title.y = element_blank(),
         legend.position = "none",
@@ -511,13 +524,13 @@ indicador <- left_join(indicador,dif_PPA_A %>% select(geo,dif_por))
 names(indicador)[5] <- "Ev_PPA"
 ```
 
-## Deuda pública
+### Deuda pública
 
 ```{r}
 #| include: false
 
 Deuda_PIB <- get_eurostat("gov_10dd_edpt1", filters = list(na_item = "GD", sector = "S13", unit = "PC_GDP")) %>% 
-  filter(!is.na(values) & geo %in% c(miembros_UE27,"EU27_2020")) %>% 
+  filter(!is.na(values) & geo %in% c(miembros_UE27$geo,"EU27_2020")) %>% 
   mutate(anyo = year(time)) %>% 
   select(geo,values,anyo)
 
@@ -543,7 +556,7 @@ dif_DP_EU <- dif_DP_A %>%
   filter(geo == "EU27") %>% 
   select(dif_por)
 
-dif_DP_EU <- cbind(dif_DP_EU,x = "DK")
+dif_DP_EU <- cbind(dif_DP_EU,x = "Dinamarca")
 
 dif_DP_A %>%
   
@@ -551,10 +564,12 @@ dif_DP_A %>%
   
   filter(geo != "EU27") %>%
   
+  left_join(miembros_UE27) %>%
+  
   mutate(texto = ifelse(dif_por == min(dif_por) | geo == "ES",dif_por,NA),
          color = ifelse(geo == "ES","ES","Otros")) %>%
   
-  ggplot(aes(x = reorder(geo,dif_por), y = dif_por)) +
+  ggplot(aes(x = reorder(nombre,dif_por), y = dif_por)) +
   
   geom_col(aes(fill = color), width = 0.6) +
   
@@ -572,7 +587,7 @@ dif_DP_A %>%
   
   theme_minimal() +
   
-  theme(axis.text.x = element_text(angle = 90, vjust = 0),
+  theme(axis.text.x = element_text(angle = 90, vjust = 0, hjust = 0.95),
         axis.title.x = element_blank(),
         axis.title.y = element_blank(),
         legend.position = "none",
@@ -586,7 +601,7 @@ indicador <- left_join(indicador,dif_DP_A %>% select(geo,dif_por))
 names(indicador)[6] <- "Ev_DP"
 ```
 
-# Resultados
+## Construcción del Indicador
 
 ```{r}
 #| include: false
@@ -596,7 +611,7 @@ norma <- apply(indicador[,2:6], 2, function(x){sqrt(sum(x^2))})
 pesos <- c(0.2125,0.15,rep(0.2125,3))
 
 indicador_norma <- as.data.frame(t(apply(indicador[,2:6], 1, function(x){x * pesos / norma})))
-indicador_norma <- cbind(geo = c(miembros_UE27,"EU27"),indicador_norma)
+indicador_norma <- cbind(geo = c(miembros_UE27$geo,"EU27"),indicador_norma)
 
 ideal <- c(max(indicador_norma$Ev_PPC_real),min(indicador_norma$Ev_Paro),min(indicador_norma$Ev_PF),max(indicador_norma$Ev_PPA),min(indicador_norma$Ev_DP))
 antiideal <- c(min(indicador_norma$Ev_PPC_real),max(indicador_norma$Ev_Paro),max(indicador_norma$Ev_PF),min(indicador_norma$Ev_PPA),max(indicador_norma$Ev_DP))
@@ -607,6 +622,78 @@ indicador_norma$Da <- apply(indicador_norma[,2:6], 1, function(x){sqrt(sum((x-an
 indicador_norma$R <- indicador_norma$Da / (indicador_norma$Da + indicador_norma$Di)
 
 indicador_norma$UE <- indicador_norma$R * 100 / indicador_norma$R[indicador_norma$geo == "EU27"]
+```
+
+Como se ha mencionado inicialmente, no todas las variables tienen el mismo peso en la elaboración del indicador.
+
+| Variables                            | Peso   |
+|--------------------------------------|--------|
+| Ev. PIB per Capita                   | 0.2125 |
+| Ev. Tasa de Paro                     | 0.15   |
+| Ev. Presión Fiscal sobre el PIB      | 0.2125 |
+| Ev. Poder Aquisitivo de las Familias | 0.2125 |
+| Ev. Deuda Pública sobre el PIB       | 0.2125 |
+
+Por otra parte, se calcula el caso ideal y el antiideal de desarrollo económico en base a los resultados obtenidos previamente. El ideal está conformado por:
+
+-   Máxima evolución PIB per Capita.
+
+-   Mayor descenso de la Tasa de Paro.
+
+-   Mayor reducción de la Presión Fiscal sobre el PIB.
+
+-   Mayor evolución del Poder Adquisitivo.
+
+-   Mayor disminución de la Deuda Pública sobre el PIB.
+
+Y el antiideal por:
+
+-   Menor evolución PIB per Capita.
+
+-   Mayor ascenso de la Tasa de Paro.
+
+-   Mayor incremento de la Presión Fiscal sobre el PIB.
+
+-   Mayor pérdida de Poder Adquisitivo.
+
+-   Mayor aumento de la Deuda Pública sobre el PIB.
+
+```{r}
+#| include: false
+ia <- as.data.frame(rbind(c(max(indicador$Ev_PPC_real),min(indicador$Ev_Paro),min(indicador$Ev_PF),max(indicador$Ev_PPA),min(indicador$Ev_DP)),
+                          c(min(indicador$Ev_PPC_real),max(indicador$Ev_Paro),max(indicador$Ev_PF),min(indicador$Ev_PPA),max(indicador$Ev_DP))))
+ia <- round(ia,2)
+rownames(ia) <- c("Ideal","Antiideal")
+names(ia) <- c("Evolución PIB per Capita","Evolución Tasa de Paro","Evolución Presión Fiscal","Evolución Poder Adquisitivo","Evolución Deuda Pública")
+```
+
+```{r}
+#| echo: false
+#| warning: false
+
+datatable(ia)
+```
+
+Posteriormente, se calcula la distancia de cada país al ideal y al antiideal.
+
+$$
+D^{ideal}_i = \sqrt{\sum_{j=1}^{5}(ideal[j]-pais_i[j])^2}
+$$
+
+$$
+D^{antiideal}_i = \sqrt{\sum_{j=1}^{5}(antiideal[j]-pais_i[j])^2}
+$$
+
+Finalmente, se obtiene el indicador para cada país mediante la siguiente fórmula:
+
+$$
+I_i = \frac{D_i^{antiideal}}{D_i^{ideal}+D_i^{antiideal}}
+$$
+
+# Resultados
+
+```{r}
+#| include: false
 
 ranking <- indicador_norma %>%
   filter(geo != "EU27") %>% 
@@ -657,11 +744,11 @@ ranking <- indicador_norma %>%
 #| echo: false
 #| warning: false
 
-ranking_tabla <- ranking %>% left_join(map %>% select(NAME_LATN,geo))
+ranking_tabla <- ranking %>% left_join(miembros_UE27)
  
-ranking_tabla <- ranking_tabla %>% select(NAME_LATN,Ev_PPC,Ev_Paro,Ev_PF,Ev_PPA,Ev_DP,UE,Ranking)
+ranking_tabla <- ranking_tabla %>% select(nombre,Ev_PPC,Ev_Paro,Ev_PF,Ev_PPA,Ev_DP,UE,Ranking)
 
-names(ranking_tabla) <- c("Países UE-27","Evolución PIB","Evolución Empleo","Presión Fiscal","Poder adquisitivo","Deuda Pública","IDE\nUE=100","Ranking")
+names(ranking_tabla) <- c("Países UE-27","Evolución PIB per Capita","Evolución Tasa de Paro","Evolución Presión Fiscal","Evolución Poder Adquisitivo","Evolución Deuda Pública","IDE\nUE=100","Ranking")
 
 datatable(ranking_tabla)
 ```
@@ -672,7 +759,7 @@ datatable(ranking_tabla)
 #| echo: false
 #| warning: false
 
-names(ranking_tabla) <- c("Países UE-27","Evolución PIB","Evolución Empleo","Presión Fiscal","Poder adquisitivo","Deuda Pública","UE=100","Ranking")
+names(ranking_tabla) <- c("Países UE-27","Evolución PIB per Capita","Evolución Tasa de Paro","Evolución Presión Fiscal","Evolución Poder Adquisitivo","Evolución Deuda Pública","UE=100","Ranking")
 
 ranking_tabla %>%
   kable(caption = "Ranking Indicador de Desarrollo Económico (2018-2023)") %>%

@@ -1,11 +1,11 @@
-This is XeTeX, Version 3.141592653-2.6-0.999994 (TeX Live 2022) (preloaded format=xelatex 2022.12.2)  12 APR 2024 10:23
+This is XeTeX, Version 3.141592653-2.6-0.999995 (TeX Live 2023) (preloaded format=xelatex 2024.1.1)  13 APR 2024 12:54
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
 **Trabajo.tex
 (./Trabajo.tex
-LaTeX2e <2022-11-01> patch level 1
-L3 programming layer <2022-11-02>
+LaTeX2e <2023-11-01>
+L3 programming layer <2023-12-11>
 
 ! LaTeX Error: File `scrartcl.cls' not found.
 
@@ -19,11 +19,11 @@ Enter file name:
 l.10 ^^M
          
 Here is how much of TeX's memory you used:
- 31 strings out of 477626
- 551 string characters out of 5838964
- 327164 words of memory out of 5000000
- 21293 multiletter control sequences out of 15000+600000
- 469259 words of font info for 28 fonts, out of 8000000 for 9000
+ 32 strings out of 476822
+ 607 string characters out of 5802675
+ 1917109 words of memory out of 5000000
+ 22099 multiletter control sequences out of 15000+600000
+ 558069 words of font info for 36 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
  19i,0n,29p,105b,17s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
